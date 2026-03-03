@@ -1,7 +1,7 @@
 /**
  * eBay Browse API price sync
  *
- * Fetches active Buy-It-Now listing prices for every unique game+console
+ * Fetches active Buy-It-Now listing prices for every unique game
  * and stores them as price_loose / price_complete / price_new / price_box_only (cents USD).
  * Also appends one row per updated game to game_price_history for trend graphs.
  *
@@ -34,35 +34,38 @@ const EBAY_SCOPE = 'https://api.ebay.com/oauth/api_scope';
 const DAILY_LIMIT = 4444;  // stay within eBay free-tier 5,000 calls/day
 const RATE_LIMIT_MS = 2000; // 2s between calls → ~2.5 hrs for a full 4,444-game batch
 
-// Map verbose DB console names → shorter search terms for better eBay results
-const CONSOLE_NAME_MAP: Record<string, string> = {
-  'Nintendo Entertainment System': 'NES',
-  'Super Nintendo Entertainment System': 'SNES',
-  'Nintendo 64': 'Nintendo 64',
-  'Nintendo GameCube': 'GameCube',
-  'Wii': 'Wii',
-  'Wii U': 'Wii U',
-  'Game Boy': 'Game Boy',
-  'Game Boy Color': 'Game Boy Color',
-  'Game Boy Advance': 'Game Boy Advance',
-  'Nintendo DS': 'Nintendo DS',
-  'Nintendo 3DS': '3DS',
-  'PlayStation': 'PS1',
-  'PlayStation 2': 'PS2',
-  'PlayStation 3': 'PS3',
-  'PlayStation Portable': 'PSP',
-  'PlayStation Vita': 'PS Vita',
-  'Sega Master System': 'Sega Master System',
-  'Sega Mega Drive / Genesis': 'Sega Genesis',
-  'Sega Saturn': 'Sega Saturn',
-  'Sega Dreamcast': 'Dreamcast',
-  'Sega Game Gear': 'Game Gear',
-  'Xbox': 'Xbox',
-  'Xbox 360': 'Xbox 360',
-  'Neo Geo': 'Neo Geo AES',
-  'TurboGrafx-16 / PC Engine': 'TurboGrafx-16',
-  'Atari 2600': 'Atari 2600',
-  'Atari Lynx': 'Atari Lynx',
+// Map IGDB platform ID → short eBay-friendly search term
+// IDs match syncAllFromIGDB.ts PLATFORMS list.
+// Note: ID 35 covers both Sega Master System and Game Gear — verify Game Gear ID before release.
+const PLATFORM_ID_TO_EBAY: Record<number, string> = {
+  18: 'NES',  99: 'NES',                            // NES / Famicom
+  19: 'SNES', 58: 'SNES',                            // SNES / Super Famicom
+  4:  'Nintendo 64',
+  21: 'GameCube',
+  5:  'Wii',
+  41: 'Wii U',
+  33: 'Game Boy',  22: 'Game Boy Color',              // GB / GBC
+  24: 'Game Boy Advance',
+  20: 'Nintendo DS',
+  37: '3DS', 137: '3DS',                              // 3DS / New 3DS
+  7:  'PS1',
+  8:  'PS2',
+  9:  'PS3',
+  38: 'PSP',
+  46: 'PS Vita',
+  11: 'Xbox',
+  12: 'Xbox 360',
+  169: 'Xbox Series', 170: 'Xbox Series',             // Xbox Series X|S
+  64: 'Sega Master System', 35: 'Sega Master System', // Master System / Mark III
+  29: 'Sega Genesis',
+  32: 'Sega Saturn',
+  23: 'Dreamcast',
+  59: 'Atari 2600', 60: 'Atari 7800',                // Atari 2600 / 7800
+  61: 'Atari Lynx',
+  86: 'TurboGrafx-16', 74: 'TurboGrafx-16',          // TG-16 / PC Engine
+  80: 'Neo Geo AES',
+  119: 'Neo Geo Pocket', 120: 'Neo Geo Pocket Color',
+  57: 'WonderSwan', 123: 'WonderSwan Color',
 };
 
 // ─── OAuth2 token management ──────────────────────────────────────────────────
@@ -161,14 +164,13 @@ type PriceResult = {
   price_box_only: number | null;
 };
 
-async function fetchPrices(gameName: string, consoleName: string): Promise<PriceResult | null> {
-  const friendly = CONSOLE_NAME_MAP[consoleName] ?? consoleName;
+async function fetchPrices(gameName: string, searchTerm: string): Promise<PriceResult | null> {
   const token = await getToken();
 
   try {
     const response = await axios.get(EBAY_SEARCH_URL, {
       params: {
-        q: `${gameName} ${friendly}`,
+        q: `${gameName} ${searchTerm}`,
         filter: 'buyingOptions:{FIXED_PRICE}',
         limit: 20,
       },
@@ -229,23 +231,13 @@ async function syncPrices(): Promise<void> {
     process.exit(1);
   }
 
-  // ── 1. Load consoles ─────────────────────────────────────────────────────
-  console.log('📦 Fetching consoles from Supabase...');
-  const {data: consoles, error: consoleErr} = await supabase
-    .from('consoles')
-    .select('id, name');
-  if (consoleErr) throw consoleErr;
-  const consoleMap = new Map<number, string>(
-    (consoles ?? []).map(c => [c.id as number, c.name as string]),
-  );
-
-  // ── 2. Load all unique (igdb_id, console_id) pairs, stalest first ─────────
+  // ── 1. Load all unique games (one entry per igdb_id), stalest first ─────────
   console.log('🎮 Fetching games from Supabase (stalest price_updated_at first)...');
 
-  // Collect one representative entry per (igdb_id, console_id), preferring NA name
+  // Collect one representative entry per igdb_id, preferring the NA name for better eBay search
   const seen = new Map<
-    string,
-    {igdb_id: number; console_id: number; name: string; hasNA: boolean; updatedAt: string | null}
+    number,
+    {igdb_id: number; name: string; platforms: number[]; hasNA: boolean; updatedAt: string | null}
   >();
 
   let page = 0;
@@ -254,20 +246,20 @@ async function syncPrices(): Promise<void> {
   while (true) {
     const {data: rows, error} = await supabase
       .from('games')
-      .select('igdb_id, console_id, name, region, price_updated_at')
+      .select('igdb_id, name, region, platforms, price_updated_at')
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
       .order('igdb_id');
     if (error) throw error;
     if (!rows || rows.length === 0) break;
 
     for (const row of rows) {
-      const key = `${row.igdb_id}-${row.console_id}`;
-      const existing = seen.get(key);
+      const igdbId = row.igdb_id as number;
+      const existing = seen.get(igdbId);
       if (!existing) {
-        seen.set(key, {
-          igdb_id: row.igdb_id as number,
-          console_id: row.console_id as number,
+        seen.set(igdbId, {
+          igdb_id: igdbId,
           name: row.name as string,
+          platforms: (row.platforms as number[]) ?? [],
           hasNA: row.region === 'NA',
           updatedAt: row.price_updated_at as string | null,
         });
@@ -292,11 +284,11 @@ async function syncPrices(): Promise<void> {
 
   const toProcess = allGames.slice(0, DAILY_LIMIT);
   console.log(
-    `\n🔍 Processing ${toProcess.length} of ${allGames.length} unique game+console combos` +
+    `\n🔍 Processing ${toProcess.length} of ${allGames.length} unique games` +
       ` (daily quota: ${DAILY_LIMIT})...\n`,
   );
 
-  // ── 3. Sync prices ─────────────────────────────────────────────────────────
+  // ── 2. Sync prices ─────────────────────────────────────────────────────────
   let updated = 0;
   let skipped = 0;
   let errors = 0;
@@ -314,12 +306,15 @@ async function syncPrices(): Promise<void> {
   }> = [];
 
   for (let i = 0; i < toProcess.length; i++) {
-    const {igdb_id, console_id, name} = toProcess[i];
-    const consoleName = consoleMap.get(console_id) ?? '';
+    const {igdb_id, name, platforms} = toProcess[i];
+    // Use the first platform ID as the primary platform for eBay search and history
+    const primaryPlatformId = platforms[0] ?? 0;
+    const searchTerm = PLATFORM_ID_TO_EBAY[primaryPlatformId] ?? '';
 
-    const prices = await fetchPrices(name, consoleName);
+    const prices = await fetchPrices(name, searchTerm);
 
     if (prices) {
+      // Update all region rows for this game with the same price
       const {error} = await supabase
         .from('games')
         .update({
@@ -329,15 +324,14 @@ async function syncPrices(): Promise<void> {
           price_box_only: prices.price_box_only,
           price_updated_at: now,
         } as any)
-        .eq('igdb_id', igdb_id)
-        .eq('console_id', console_id);
+        .eq('igdb_id', igdb_id);
 
       if (error) {
         console.error(`  ❌ DB error for "${name}":`, error.message);
         errors++;
       } else {
         updated++;
-        historyRows.push({igdb_id, console_id, ...prices, source: 'ebay'});
+        historyRows.push({igdb_id, console_id: primaryPlatformId, ...prices, source: 'ebay'});
       }
     } else {
       skipped++;
@@ -352,7 +346,7 @@ async function syncPrices(): Promise<void> {
     await sleep(RATE_LIMIT_MS);
   }
 
-  // ── 4. Write price history rows ────────────────────────────────────────────
+  // ── 3. Write price history rows ────────────────────────────────────────────
   if (historyRows.length > 0) {
     console.log(`\n📈 Writing ${historyRows.length} rows to game_price_history...`);
     const BATCH_SIZE = 500;
