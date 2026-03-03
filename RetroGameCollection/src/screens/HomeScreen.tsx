@@ -8,7 +8,7 @@ import {
   RefreshControl,
   Image,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, StackActions} from '@react-navigation/native';
 import type {CompositeNavigationProp} from '@react-navigation/native';
 import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -72,6 +72,15 @@ export default function HomeScreen() {
   }, [collection]);
 
   const atConsoleLimitWarning = !isPro && consolesTracked >= FREE_CONSOLE_LIMIT - 1;
+
+  function navigateTab(tabName: 'Collection' | 'Consoles') {
+    const state = navigation.getState();
+    const route = state.routes.find((r: any) => r.name === tabName);
+    if (route?.state?.key && (route.state.index ?? 0) > 0) {
+      navigation.dispatch({...StackActions.popToTop(), target: route.state.key as string});
+    }
+    navigation.navigate(tabName);
+  }
 
   return (
     <View style={styles.container}>
@@ -211,7 +220,7 @@ export default function HomeScreen() {
 
           <TouchableOpacity
             style={styles.ctaCard}
-            onPress={() => navigation.navigate('Collection')}
+            onPress={() => navigateTab('Collection')}
             activeOpacity={0.8}>
             <View>
               <Text style={styles.ctaTitle}>My Collection</Text>
@@ -224,7 +233,7 @@ export default function HomeScreen() {
 
           <TouchableOpacity
             style={styles.ctaCard}
-            onPress={() => navigation.navigate('Consoles')}
+            onPress={() => navigateTab('Consoles')}
             activeOpacity={0.8}>
             <View>
               <Text style={styles.ctaTitle}>Browse Games</Text>

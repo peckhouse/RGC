@@ -22,12 +22,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     reactNativeFactory = factory
 
     window = UIWindow(frame: UIScreen.main.bounds)
+    window?.backgroundColor = UIColor(red: 10.0/255, green: 10.0/255, blue: 15.0/255, alpha: 1.0)
 
     factory.startReactNative(
       withModuleName: "RetroGameCollection",
       in: window,
       launchOptions: launchOptions
     )
+
+    // Prevent white flash before JS renders
+    window?.rootViewController?.view.backgroundColor = UIColor(red: 10.0/255, green: 10.0/255, blue: 15.0/255, alpha: 1.0)
 
     return true
   }

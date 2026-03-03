@@ -28,7 +28,7 @@ jobs:
 
       - name: Run sync
         working-directory: sync-service
-        run: npx tsx src/index.ts
+        run: npx tsx src/syncAllFromIGDB.ts
         env:
           IGDB_CLIENT_ID: ${{ secrets.IGDB_CLIENT_ID }}
           IGDB_CLIENT_SECRET: ${{ secrets.IGDB_CLIENT_SECRET }}

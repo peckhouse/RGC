@@ -88,7 +88,8 @@ const PLATFORMS: Array<{ids: number[]; label: string}> = [
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type RegionCode = 'EU' | 'NA' | 'JP';
-const IGDB_REGION_MAP: Record<number, RegionCode> = {1: 'EU', 2: 'NA', 5: 'JP'};
+// Region 8 = Worldwide — captured separately and used as fallback for missing EU/NA/JP
+const IGDB_REGION_MAP: Record<number, RegionCode | 'WW'> = {1: 'EU', 2: 'NA', 5: 'JP', 8: 'WW'};
 const BUCKET_IGDB_REGION: Record<RegionCode, number> = {EU: 1, NA: 2, JP: 5};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -176,10 +177,22 @@ async function syncPlatformGames(
       game.multiplayer_modes?.reduce((max, mm) => Math.max(max, mm.offlinemax ?? 0, mm.onlinemax ?? 0), 0) || null;
 
     const regionDates = new Map<RegionCode, string | null>();
+    let wwDate: string | null | undefined = undefined;
     for (const rd of rdMap.get(game.id) ?? []) {
       const code = IGDB_REGION_MAP[rd.release_region ?? -1];
-      if (!code || regionDates.has(code)) continue;
-      regionDates.set(code, rd.date ? new Date(rd.date * 1000).toISOString().split('T')[0] : null);
+      if (!code) continue;
+      const dateStr = rd.date ? new Date(rd.date * 1000).toISOString().split('T')[0] : null;
+      if (code === 'WW') {
+        if (wwDate === undefined) wwDate = dateStr;
+      } else if (!regionDates.has(code)) {
+        regionDates.set(code, dateStr);
+      }
+    }
+    // Fill any missing EU/NA/JP with the worldwide date
+    if (wwDate !== undefined) {
+      for (const r of ['EU', 'NA', 'JP'] as RegionCode[]) {
+        if (!regionDates.has(r)) regionDates.set(r, wwDate);
+      }
     }
 
     let regionCount = 0;
@@ -245,8 +258,6 @@ async function main() {
   console.log('📺 Syncing consoles...');
   const {count: consolesCount} = await syncConsoles(igdb);
   console.log(`✅ ${consolesCount} consoles synced\n`);
-
-  return;
 
   if (DRY_RUN) {
     console.log('(Consoles upserted even in dry-run — syncConsoles does not check DRY_RUN)');

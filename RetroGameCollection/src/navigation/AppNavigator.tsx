@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {View, Image, ActivityIndicator, StyleSheet} from 'react-native';
+import {View, Image, StyleSheet} from 'react-native';
 import {NavigationContainer, StackActions, useNavigationContainerRef} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
@@ -23,6 +23,7 @@ import WishlistScreen from '../screens/WishlistScreen';
 import WishlistConsoleScreen from '../screens/WishlistConsoleScreen';
 import AccountScreen from '../screens/AccountScreen';
 import LoginScreen from '../screens/LoginScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import PaywallScreen from '../screens/PaywallScreen';
 
 export type RootStackParamList = {
@@ -33,6 +34,7 @@ export type RootStackParamList = {
 
 export type AuthStackParamList = {
   Login: undefined;
+  ForgotPassword: undefined;
 };
 
 export type MainTabParamList = {
@@ -160,6 +162,7 @@ function AuthNavigator() {
   return (
     <AuthStack.Navigator screenOptions={{headerShown: false}}>
       <AuthStack.Screen name="Login" component={LoginScreen} />
+      <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     </AuthStack.Navigator>
   );
 }
@@ -235,14 +238,6 @@ function MainTabs() {
   );
 }
 
-function SplashScreen() {
-  return (
-    <View style={styles.splash}>
-      <ActivityIndicator size="large" color="#6366f1" />
-    </View>
-  );
-}
-
 export default function AppNavigator() {
   const {session, loading} = useAuth();
   const navigationRef = useNavigationContainerRef();
@@ -258,7 +253,7 @@ export default function AppNavigator() {
   }, [session?.user?.id, session?.user?.email]);
 
   if (loading) {
-    return <SplashScreen />;
+    return <View style={styles.splash} />;
   }
 
   return (
@@ -287,8 +282,6 @@ export default function AppNavigator() {
 const styles = StyleSheet.create({
   splash: {
     flex: 1,
-    backgroundColor: '#0f172a',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#0A0A0F',
   },
 });
