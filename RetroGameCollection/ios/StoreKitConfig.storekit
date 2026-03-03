@@ -1,0 +1,121 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "3E460C22",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "49.99",
+      "familyShareable" : false,
+      "internalID" : "6759786360",
+      "localizations" : [
+        {
+          "description" : "Unlimited consoles, wishlist access, and no ads.",
+          "displayName" : "RGC Pro Lifetime",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.retrogamecollection.app.lifetime",
+      "referenceName" : "RGC Pro Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6759779934",
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_developerTeamID" : "63GSJS8QM8",
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 794192751.29694402,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21952780",
+      "localizations" : [
+
+      ],
+      "name" : "RGC Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "24.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6759786138",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited consoles, wishlist access, and no ads.",
+              "displayName" : "RGC Pro Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.retrogamecollection.app.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "RGC Pro Annual",
+          "subscriptionGroupID" : "21952780",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6759786020",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited consoles, wishlist access, and no ads.",
+              "displayName" : "RGC Pro Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.retrogamecollection.app.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "RGC Pro Monthly",
+          "subscriptionGroupID" : "21952780",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
