@@ -14,7 +14,7 @@ import {
   ScrollView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import {Mail} from 'lucide-react-native';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {supabase} from '../lib/supabase';
@@ -97,7 +97,7 @@ export default function ForgotPasswordScreen() {
 
               <Text style={styles.label}>Email</Text>
               <View style={styles.inputWrapper}>
-                <Ionicons name="mail-outline" size={18} color="#64748b" style={styles.inputIcon} />
+                <Mail size={18} color="#64748b" style={styles.inputIcon} />
                 <TextInput
                   style={styles.inputField}
                   value={email}

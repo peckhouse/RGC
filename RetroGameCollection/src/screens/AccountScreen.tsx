@@ -1,5 +1,5 @@
 import React, {useState, useRef, useEffect} from 'react';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import {LogOut} from 'lucide-react-native';
 import {
   View,
   Text,
@@ -269,7 +269,7 @@ export default function AccountScreen() {
         <Pressable style={styles.signOutRow} onPress={() => signOut()}>
           {({pressed}) => (
             <>
-              <Ionicons name="log-out-outline" size={18} color={pressed ? '#f87171' : '#ef4444'} style={{marginRight: 8}} />
+              <LogOut size={18} color={pressed ? '#f87171' : '#ef4444'} style={{marginRight: 8}} />
               <Text style={[styles.signOutText, {color: pressed ? '#f87171' : '#ef4444'}]}>Sign Out</Text>
             </>
           )}

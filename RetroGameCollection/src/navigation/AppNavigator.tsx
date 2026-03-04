@@ -3,7 +3,7 @@ import {View, Image, StyleSheet} from 'react-native';
 import {NavigationContainer, StackActions, useNavigationContainerRef} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import {Home, Gamepad2, Library, Star, User} from 'lucide-react-native';
 
 import {useAuth} from '../hooks/useAuth';
 import {Analytics} from '../lib/analytics';
@@ -82,20 +82,20 @@ const ICON_SIZE = 28;
 
 type TabIconProps = {color: string; size: number; focused: boolean};
 
-function HomeTabIcon({color, focused}: TabIconProps) {
-  return <Ionicons name={focused ? 'home' : 'home-outline'} size={ICON_SIZE} color={color} />;
+function HomeTabIcon({color}: TabIconProps) {
+  return <Home size={ICON_SIZE} color={color} />;
 }
 
-function ConsolesTabIcon({color, focused}: TabIconProps) {
-  return <Ionicons name={focused ? 'game-controller' : 'game-controller-outline'} size={ICON_SIZE} color={color} />;
+function ConsolesTabIcon({color}: TabIconProps) {
+  return <Gamepad2 size={ICON_SIZE} color={color} />;
 }
 
-function CollectionTabIcon({color, focused}: TabIconProps) {
-  return <Ionicons name={focused ? 'library' : 'library-outline'} size={ICON_SIZE} color={color} />;
+function CollectionTabIcon({color}: TabIconProps) {
+  return <Library size={ICON_SIZE} color={color} />;
 }
 
-function WishlistTabIcon({color, focused}: TabIconProps) {
-  return <Ionicons name={focused ? 'star' : 'star-outline'} size={ICON_SIZE} color={color} />;
+function WishlistTabIcon({color}: TabIconProps) {
+  return <Star size={ICON_SIZE} color={color} />;
 }
 
 function AccountTabIcon({color, focused}: TabIconProps) {
@@ -106,7 +106,7 @@ function AccountTabIcon({color, focused}: TabIconProps) {
     borderRadius: ICON_SIZE / 2,
     borderWidth: focused ? 2 : 0,
     borderColor: '#6366f1',
-  }
+  };
 
   if (profile?.avatar_url) {
     return (
@@ -116,7 +116,7 @@ function AccountTabIcon({color, focused}: TabIconProps) {
       />
     );
   }
-  return <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={ICON_SIZE} color={color} />;
+  return <User size={ICON_SIZE} color={color} />;
 }
 
 const darkHeader = {
