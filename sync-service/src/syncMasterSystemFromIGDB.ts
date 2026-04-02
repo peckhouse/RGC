@@ -188,7 +188,7 @@ async function main() {
       const regionId = BUCKET_IGDB_REGION[regionCode];
       toUpsert.push({
         igdb_id:      game.id,
-        platform_id:  PLATFORM_IDS[0],
+        platform_id:  MARK3_PLATFORM_ID,
         region:       regionCode,
         name:         game.name,
         slug:         game.slug,

@@ -155,8 +155,11 @@ async function syncPlatformGames(
 ): Promise<{upserted: number; noRegion: number}> {
   const {ids, label} = platform;
 
-  // Canonical platform ID = the one that is NOT an alias (exists in consoles table)
-  const canonicalId = ids.find(id => !(id in remap)) ?? ids[0];
+  // Canonical platform ID = the one that exists in the consoles table.
+  // If one of the ids is NOT an alias, use it directly.
+  // If ALL ids are aliases (e.g. Master System where both 35 and 64 remap to a third ID),
+  // use the remap target — that's the actual console table ID.
+  const canonicalId = ids.find(id => !(id in remap)) ?? remap[ids[0]] ?? ids[0];
 
   // Step 1 — fetch games, deduplicate across platform IDs
   type IGDBGame = Awaited<ReturnType<typeof igdb.fetchGamesByPlatform>>[number];
