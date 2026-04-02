@@ -41,7 +41,7 @@ const GRID_PADDING = 16;
 const GRID_GAP = 10;
 
 // Static local logos keyed by the display name stored in the DB
-const CONSOLE_LOGO_MAP: Record<string, ReturnType<typeof require>> = {
+export const CONSOLE_LOGO_MAP: Record<string, ReturnType<typeof require>> = {
   // ── Nintendo ──────────────────────────────────────────────────────
   'Famicom / NES':              require('../../assets/console-logo/nintendo/nes.jpg'),
   'Super Famicom / SNES':       require('../../assets/console-logo/nintendo/snes.jpg'),
@@ -49,7 +49,7 @@ const CONSOLE_LOGO_MAP: Record<string, ReturnType<typeof require>> = {
   'GameCube':                   require('../../assets/console-logo/nintendo/gamecube.jpg'),
   'Wii':                        require('../../assets/console-logo/nintendo/wii.jpg'),
   'Wii U':                      require('../../assets/console-logo/nintendo/wii-u.jpg'),
-  'GB Color':                   require('../../assets/console-logo/nintendo/gb.jpg'),
+  'Game Boy / GB Color':        require('../../assets/console-logo/nintendo/gb.jpg'),
   'Game Boy Advance':           require('../../assets/console-logo/nintendo/gb-advance.jpg'),
   'Virtual Boy':                require('../../assets/console-logo/nintendo/virtual-boy.jpg'),
   'DS':                         require('../../assets/console-logo/nintendo/ds.jpg'),
@@ -227,6 +227,7 @@ export default function ManufacturerScreen() {
             </View>
           </>
         }
+        stickySectionHeadersEnabled={false}
         renderSectionHeader={({section: {title}}) => (
           <Text style={styles.sectionHeader}>{title}</Text>
         )}
@@ -303,12 +304,11 @@ const styles = StyleSheet.create({
   },
   // Section headers
   sectionHeader: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '700',
+    fontStyle: 'italic',
     fontFamily: Fonts.display,
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    color: '#ffffff',
     paddingHorizontal: GRID_PADDING,
     paddingTop: 18,
     paddingBottom: 8,

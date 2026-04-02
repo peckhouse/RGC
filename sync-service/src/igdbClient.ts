@@ -74,7 +74,7 @@ export class IGDBClient {
   async fetchPlatforms(offset = 0, limit = 500): Promise<IGDBPlatform[]> {
     const res = await axios.post(
       'https://api.igdb.com/v4/platforms',
-      `fields id, name, slug, summary, platform_logo.image_id, platform_family.name, generation; where generation != null; limit ${limit}; offset ${offset}; sort id asc;`,
+      `fields id, name, slug, summary, platform_logo.image_id, platform_family.name, generation; limit ${limit}; offset ${offset}; sort id asc;`,
       {headers: this.headers()},
     );
     return res.data;

@@ -114,7 +114,7 @@ const ALLOWED_PLATFORMS = new Set([
 
   // ── NEC ───────────────────────────────────────────────────────────
   'TurboGrafx-16/PC Engine', // IGDB canonical; TurboGrafx-16 + SuperGrafx merged via alias
-  'TurboGrafx-CD/PC Engine CD',
+  'Turbografx-16/PC Engine CD',
 
   // ── SNK ───────────────────────────────────────────────────────────
   'Neo Geo AES',            // IGDB canonical; Neo Geo MVS merged via alias
@@ -142,7 +142,7 @@ const PLATFORM_DISPLAY_NAME: Record<string, string> = {
   'Nintendo 64':                         'N64',
   'Nintendo GameCube':                   'GameCube',
   // Nintendo handheld
-  'Game Boy':     'GB Color',
+  'Game Boy':     'Game Boy / GB Color',
   'Nintendo DS':  'DS',
   'Nintendo 3DS': '3DS',
   // Atari
@@ -158,7 +158,7 @@ const PLATFORM_DISPLAY_NAME: Record<string, string> = {
   'Sega Saturn':             'Saturn',
   // NEC
   'TurboGrafx-16/PC Engine': 'PC Engine / TurboGrafx-16',
-  'TurboGrafx-CD/PC Engine CD': 'PC Engine CD / TurboGrafx-CD',
+  'Turbografx-16/PC Engine CD': 'PC Engine CD / TurboGrafx-CD',
   // SNK
   'Neo Geo AES':    'Neo Geo',
   'Neo Geo CD':     'Neo Geo CD',
@@ -208,7 +208,7 @@ const PLATFORM_TYPE: Record<string, PlatformType> = {
   'Atari Lynx': 'handheld',
   // NEC — home
   'TurboGrafx-16/PC Engine': 'home',
-  'TurboGrafx-CD/PC Engine CD': 'home',
+  'Turbografx-16/PC Engine CD': 'home',
   // SNK — home
   'Neo Geo AES': 'home',
   'Neo Geo CD': 'home',
@@ -254,7 +254,7 @@ const PLATFORM_RELEASE_YEAR: Record<string, number> = {
   'Atari Lynx': 1989,
   // NEC
   'TurboGrafx-16/PC Engine': 1987,
-  'TurboGrafx-CD/PC Engine CD': 1988,
+  'Turbografx-16/PC Engine CD': 1988,
   // SNK
   'Neo Geo AES': 1990,
   'Neo Geo CD': 1994,
@@ -300,7 +300,7 @@ const PLATFORM_MANUFACTURER: Record<string, string> = {
   'Atari Lynx': 'Atari',
   // NEC
   'TurboGrafx-16/PC Engine': 'NEC',
-  'TurboGrafx-CD/PC Engine CD': 'NEC',
+  'Turbografx-16/PC Engine CD': 'NEC',
   // SNK
   'Neo Geo AES': 'SNK',
   'Neo Geo CD': 'SNK',

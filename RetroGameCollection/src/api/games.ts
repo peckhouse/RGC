@@ -1,33 +1,52 @@
-import {useQuery} from '@tanstack/react-query';
+import {useQuery, useInfiniteQuery} from '@tanstack/react-query';
 import {supabase} from '../lib/supabase';
 import type {Game} from '../types/database';
 
-async function fetchGamesByConsole(consoleId: number): Promise<Game[]> {
-  // Paginate in chunks of 1000 to work around PostgREST's max_rows cap.
-  const PAGE_SIZE = 1000;
-  const allGames: Game[] = [];
-  let from = 0;
+const PAGE_SIZE = 1000;
 
-  while (true) {
-    const {data, error} = await supabase
-      .from('games')
-      .select('*')
-      .eq('platform_id', consoleId)
-      .order('name')
-      .range(from, from + PAGE_SIZE - 1);
-    if (error) throw error;
-    allGames.push(...(data ?? []));
-    if ((data ?? []).length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
+type RegionCode = 'EU' | 'NA' | 'JP';
+
+async function fetchGamesPage({
+  consoleId,
+  region,
+  search,
+  page,
+}: {
+  consoleId: number;
+  region: RegionCode;
+  search: string;
+  page: number;
+}): Promise<Game[]> {
+  const from = page * PAGE_SIZE;
+  let query = supabase
+    .from('games')
+    .select('*')
+    .eq('platform_id', consoleId)
+    .eq('region', region)
+    .order('name')
+    .range(from, from + PAGE_SIZE - 1);
+
+  if (search.trim()) {
+    query = query.ilike('name', `%${search.trim()}%`);
   }
 
-  return allGames;
+  const {data, error} = await query;
+  if (error) throw error;
+  return data ?? [];
 }
 
-export function useGamesByConsole(consoleId: number) {
-  return useQuery({
-    queryKey: ['games', 'console', consoleId],
-    queryFn: () => fetchGamesByConsole(consoleId),
+export function useGamesByConsole(
+  consoleId: number,
+  region: RegionCode,
+  search: string,
+) {
+  return useInfiniteQuery({
+    queryKey: ['games', 'console', consoleId, region, search],
+    queryFn: ({pageParam}) =>
+      fetchGamesPage({consoleId, region, search, page: pageParam}),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+      lastPage.length === PAGE_SIZE ? lastPageParam + 1 : undefined,
   });
 }
 
@@ -63,32 +82,41 @@ export function useGame(gameId: number) {
   });
 }
 
-async function fetchGameCountByConsole(consoleId: number): Promise<number> {
-  const PAGE_SIZE = 1000;
-  const allIds: number[] = [];
-  let from = 0;
+async function fetchGameStatsForConsoleRegion(
+  consoleId: number,
+  region: RegionCode,
+): Promise<{total: number; owned: number}> {
+  // Total games for this console + region
+  const {count: total, error: totalErr} = await supabase
+    .from('games')
+    .select('*', {count: 'exact', head: true})
+    .eq('platform_id', consoleId)
+    .eq('region', region);
+  if (totalErr) throw totalErr;
 
-  while (true) {
-    const {data, error} = await supabase
-      .from('games')
-      .select('igdb_id')
-      .eq('platform_id', consoleId)
-      .range(from, from + PAGE_SIZE - 1);
-    if (error) throw error;
-    allIds.push(...(data ?? []).map(g => (g as any).igdb_id));
-    if ((data ?? []).length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
+  // Owned games: count user_collections entries that match this console
+  // and join to games in this region
+  const {data: {user} = {user: null}} = await supabase.auth.getUser();
+  let owned = 0;
+  if (user) {
+    const {count: ownedCount, error: ownedErr} = await supabase
+      .from('user_collections')
+      .select('id, games!inner(id)', {count: 'exact', head: true})
+      .eq('user_id', user.id)
+      .eq('console_id', consoleId)
+      .eq('games.region', region);
+    if (ownedErr) throw ownedErr;
+    owned = ownedCount ?? 0;
   }
 
-  // Count distinct igdb_ids — each physical game is one, regardless of EU/NA/JP rows
-  return new Set(allIds).size;
+  return {total: total ?? 0, owned};
 }
 
-export function useGameCountByConsole(consoleId: number) {
+export function useGameStatsForConsoleRegion(consoleId: number, region: RegionCode) {
   return useQuery({
-    queryKey: ['games', 'count', 'console', consoleId],
-    queryFn: () => fetchGameCountByConsole(consoleId),
-    staleTime: 24 * 60 * 60 * 1000,
+    queryKey: ['games', 'stats', 'console', consoleId, region],
+    queryFn: () => fetchGameStatsForConsoleRegion(consoleId, region),
+    staleTime: 5 * 60 * 1000,
   });
 }
 

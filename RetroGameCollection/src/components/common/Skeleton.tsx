@@ -39,71 +39,57 @@ function Bone({
   );
 }
 
-// ─── Game row skeleton (used in GameList, CollectionConsole, WishlistConsole) ─
+// ─── Game card skeleton (used in GameList, CollectionConsole, WishlistConsole) ─
 
-function GameRowItem({opacity}: {opacity: Animated.Value}) {
+function GameCardItem({opacity}: {opacity: Animated.Value}) {
   return (
-    <View style={rowStyles.row}>
-      <Bone width={48} height={62} borderRadius={5} opacity={opacity} />
-      <View style={rowStyles.info}>
-        <Bone width="58%" height={14} borderRadius={3} opacity={opacity} />
-        <Bone width="34%" height={10} borderRadius={3} opacity={opacity} />
+    <View style={gameListStyles.card}>
+      <Bone width={56} height={72} borderRadius={6} opacity={opacity} />
+      <View style={gameListStyles.cardInfo}>
+        <Bone width="65%" height={15} borderRadius={3} opacity={opacity} />
+        <Bone width="40%" height={10} borderRadius={3} opacity={opacity} />
+        <Bone width="30%" height={10} borderRadius={3} opacity={opacity} />
       </View>
     </View>
   );
 }
 
-const rowStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-  },
-  info: {
-    flex: 1,
-    gap: 8,
-  },
-});
+export function GameCardsSkeleton() {
+  const opacity = useShimmer();
+  return (
+    <View>
+      {Array.from({length: 5}).map((_, i) => (
+        <GameCardItem key={i} opacity={opacity} />
+      ))}
+    </View>
+  );
+}
 
 export function GameListSkeleton() {
   const opacity = useShimmer();
   return (
     <View>
-      {/* Header: title + subtitle + progress ring */}
+      {/* Header: logo + title + progress ring */}
       <View style={gameListStyles.header}>
-        <View style={gameListStyles.headerText}>
-          <Bone width="55%" height={22} borderRadius={4} opacity={opacity} />
-          <Bone width="38%" height={11} borderRadius={3} opacity={opacity} />
-        </View>
+        <Bone width={48} height={48} borderRadius={8} opacity={opacity} />
+        <Bone width="40%" height={18} borderRadius={4} opacity={opacity} />
+        <View style={{flex: 1}} />
         <Bone width={72} height={72} borderRadius={36} opacity={opacity} />
-      </View>
-
-      {/* Search bar */}
-      <View style={gameListStyles.searchRow}>
-        <Bone width="100%" height={40} borderRadius={10} opacity={opacity} />
       </View>
 
       {/* Region tabs */}
       <View style={gameListStyles.tabBar}>
-        <View style={gameListStyles.tab}>
-          <Bone width="100%" height={36} borderRadius={8} opacity={opacity} />
-        </View>
-        <View style={gameListStyles.tab}>
-          <Bone width="100%" height={36} borderRadius={8} opacity={opacity} />
-        </View>
-        <View style={gameListStyles.tab}>
-          <Bone width="100%" height={36} borderRadius={8} opacity={opacity} />
-        </View>
+        <Bone width="100%" height={34} borderRadius={12} opacity={opacity} />
       </View>
 
-      {/* Game rows */}
+      {/* Search bar */}
+      <View style={gameListStyles.searchRow}>
+        <Bone width="100%" height={38} borderRadius={12} opacity={opacity} />
+      </View>
+
+      {/* Game cards */}
       {Array.from({length: 5}).map((_, i) => (
-        <React.Fragment key={i}>
-          <GameRowItem opacity={opacity} />
-          {i < 4 && <View style={sharedStyles.sep} />}
-        </React.Fragment>
+        <GameCardItem key={i} opacity={opacity} />
       ))}
     </View>
   );
@@ -113,28 +99,36 @@ const gameListStyles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,
-  },
-  headerText: {
-    flex: 1,
-    paddingRight: 12,
     gap: 8,
+  },
+  tabBar: {
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 8,
   },
   searchRow: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 10,
-    gap: 8,
   },
-  tab: {
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 160, 255, 0.2)',
+    backgroundColor: '#0a1a35',
+  },
+  cardInfo: {
     flex: 1,
+    gap: 8,
   },
 });
 

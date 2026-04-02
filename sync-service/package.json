@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "sync-consoles": "tsx src/syncConsolesOnly.ts",
     "sync-all-igdb": "tsx src/syncAllFromIGDB.ts",
     "sync-n64-igdb": "tsx src/syncN64FromIGDB.ts",
     "sync-gb-igdb": "tsx src/syncGBFromIGDB.ts",
