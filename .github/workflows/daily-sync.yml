@@ -1,8 +1,8 @@
-name: Daily IGDB Sync
+name: Monthly IGDB Sync
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # 2 AM UTC every day
+    - cron: '0 2 1 * *'  # 2 AM UTC on the 1st of every month
   workflow_dispatch:      # Allow manual trigger from GitHub UI
 
 jobs:
