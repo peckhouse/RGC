@@ -55,15 +55,19 @@ const PLATFORM_ID_TO_EBAY: Record<number, string> = {
   46: 'PS Vita',
   11: 'Xbox',
   12: 'Xbox 360',
-  169: 'Xbox Series', 170: 'Xbox Series',             // Xbox Series X|S
+  49: 'Xbox One',
   64: 'Sega Master System', 35: 'Sega Master System', // Master System / Mark III
   29: 'Sega Genesis',
   32: 'Sega Saturn',
   23: 'Dreamcast',
   59: 'Atari 2600', 60: 'Atari 7800',                // Atari 2600 / 7800
   61: 'Atari Lynx',
+  62: 'Atari Jaguar',
+  87: 'Virtual Boy',
   86: 'TurboGrafx-16', 74: 'TurboGrafx-16',          // TG-16 / PC Engine
+  150: 'TurboGrafx-CD',                                // PC Engine CD
   80: 'Neo Geo AES',
+  136: 'Neo Geo CD',
   119: 'Neo Geo Pocket', 120: 'Neo Geo Pocket Color',
   57: 'WonderSwan', 123: 'WonderSwan Color',
 };
@@ -231,13 +235,13 @@ async function syncPrices(): Promise<void> {
     process.exit(1);
   }
 
-  // ── 1. Load all unique games (one entry per igdb_id), stalest first ─────────
+  // ── 1. Load all unique games (one entry per igdb_id + platform_id), stalest first ─
   console.log('🎮 Fetching games from Supabase (stalest price_updated_at first)...');
 
-  // Collect one representative entry per igdb_id, preferring the NA name for better eBay search
+  // Collect one representative entry per (igdb_id, platform_id), preferring the NA name for eBay search
   const seen = new Map<
-    number,
-    {igdb_id: number; name: string; platforms: number[]; hasNA: boolean; updatedAt: string | null}
+    string,
+    {igdb_id: number; platform_id: number; name: string; hasNA: boolean; updatedAt: string | null}
   >();
 
   let page = 0;
@@ -246,7 +250,7 @@ async function syncPrices(): Promise<void> {
   while (true) {
     const {data: rows, error} = await supabase
       .from('games')
-      .select('igdb_id, name, region, platforms, price_updated_at')
+      .select('igdb_id, name, region, platform_id, price_updated_at')
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
       .order('igdb_id');
     if (error) throw error;
@@ -254,12 +258,14 @@ async function syncPrices(): Promise<void> {
 
     for (const row of rows) {
       const igdbId = row.igdb_id as number;
-      const existing = seen.get(igdbId);
+      const platformId = row.platform_id as number;
+      const key = `${igdbId}_${platformId}`;
+      const existing = seen.get(key);
       if (!existing) {
-        seen.set(igdbId, {
+        seen.set(key, {
           igdb_id: igdbId,
+          platform_id: platformId,
           name: row.name as string,
-          platforms: (row.platforms as number[]) ?? [],
           hasNA: row.region === 'NA',
           updatedAt: row.price_updated_at as string | null,
         });
@@ -298,6 +304,7 @@ async function syncPrices(): Promise<void> {
   const historyRows: Array<{
     igdb_id: number;
     console_id: number;
+    platform_id: number;
     price_loose: number | null;
     price_complete: number | null;
     price_new: number | null;
@@ -306,15 +313,13 @@ async function syncPrices(): Promise<void> {
   }> = [];
 
   for (let i = 0; i < toProcess.length; i++) {
-    const {igdb_id, name, platforms} = toProcess[i];
-    // Use the first platform ID as the primary platform for eBay search and history
-    const primaryPlatformId = platforms[0] ?? 0;
-    const searchTerm = PLATFORM_ID_TO_EBAY[primaryPlatformId] ?? '';
+    const {igdb_id, platform_id, name} = toProcess[i];
+    const searchTerm = PLATFORM_ID_TO_EBAY[platform_id] ?? '';
 
     const prices = await fetchPrices(name, searchTerm);
 
     if (prices) {
-      // Update all region rows for this game with the same price
+      // Update all region rows for this game + platform with the same price
       const {error} = await supabase
         .from('games')
         .update({
@@ -324,14 +329,15 @@ async function syncPrices(): Promise<void> {
           price_box_only: prices.price_box_only,
           price_updated_at: now,
         } as any)
-        .eq('igdb_id', igdb_id);
+        .eq('igdb_id', igdb_id)
+        .eq('platform_id', platform_id);
 
       if (error) {
         console.error(`  ❌ DB error for "${name}":`, error.message);
         errors++;
       } else {
         updated++;
-        historyRows.push({igdb_id, console_id: primaryPlatformId, ...prices, source: 'ebay'});
+        historyRows.push({igdb_id, console_id: platform_id, platform_id, ...prices, source: 'ebay'});
       }
     } else {
       skipped++;

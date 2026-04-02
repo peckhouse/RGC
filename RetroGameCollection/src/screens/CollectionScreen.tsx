@@ -16,6 +16,7 @@ import {ConsoleListSkeleton} from '../components/common/Skeleton';
 import type {CollectionStackParamList} from '../navigation/AppNavigator';
 import type {CollectionEntryWithDetails} from '../api/collection';
 import AdBanner from '../components/common/AdBanner';
+import ScreenLogo from '../components/common/ScreenLogo';
 
 type Nav = NativeStackNavigationProp<CollectionStackParamList>;
 
@@ -140,6 +141,7 @@ export default function CollectionScreen() {
         }
         ListHeaderComponent={
           <View style={styles.header}>
+            <ScreenLogo />
             <Text style={styles.title}>My Collection</Text>
           </View>
         }
@@ -164,11 +166,11 @@ export default function CollectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0A0A0F',
   },
   center: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0A0A0F',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
@@ -177,6 +179,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingTop: 64,
     paddingBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   title: {
     fontSize: 28,
@@ -230,7 +234,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 68,
     borderRadius: 5,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0A0A0F',
   },
   coverPlaceholder: {
     alignItems: 'center',
@@ -242,7 +246,7 @@ const styles = StyleSheet.create({
   coverMore: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0A0A0F',
   },
   coverMoreText: {
     fontSize: 13,

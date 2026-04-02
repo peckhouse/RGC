@@ -188,6 +188,7 @@ async function main() {
       const regionId = BUCKET_IGDB_REGION[regionCode];
       toUpsert.push({
         igdb_id:      game.id,
+        platform_id:  PLATFORM_IDS[0],
         region:       regionCode,
         name:         game.name,
         slug:         game.slug,
@@ -232,7 +233,7 @@ async function main() {
     const batch = toUpsert.slice(i, i + BATCH);
     const {error} = await supabase
       .from('games')
-      .upsert(batch, {onConflict: 'igdb_id,region'});
+      .upsert(batch, {onConflict: 'igdb_id,platform_id,region'});
     if (error) {
       console.error(`  ❌ Batch ${Math.floor(i / BATCH) + 1} failed: ${error.message}`);
     } else {

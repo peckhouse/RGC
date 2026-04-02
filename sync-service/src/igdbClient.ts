@@ -34,6 +34,7 @@ interface IGDBGame {
     publisher?: boolean;
   }[];
   screenshots?: {image_id: string}[];
+  keywords?: {name: string}[];
   release_dates?: IGDBReleaseDate[];
   multiplayer_modes?: {offlinemax?: number; onlinemax?: number}[];
 }
@@ -128,7 +129,7 @@ export class IGDBClient {
               first_release_date,
               rating, rating_count, genres.name, platforms,
               involved_companies.company.name, involved_companies.developer, involved_companies.publisher,
-              screenshots.image_id,
+              screenshots.image_id, keywords.name,
               multiplayer_modes.offlinemax, multiplayer_modes.onlinemax;
        where platforms = (${platformId}) & version_parent = null & (status = null | status != 6);
        sort id asc;

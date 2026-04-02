@@ -1,5 +1,6 @@
 import React, {useEffect, useRef} from 'react';
-import {Animated, StyleSheet, View} from 'react-native';
+import {Animated, StyleSheet, Text, View} from 'react-native';
+import {Gamepad2, Joystick} from 'lucide-react-native';
 
 function useShimmer() {
   const opacity = useRef(new Animated.Value(0.4)).current;
@@ -134,6 +135,106 @@ const gameListStyles = StyleSheet.create({
   },
   tab: {
     flex: 1,
+  },
+});
+
+// ─── Home stats card skeleton ──────────────────────────────────────────────────
+
+export function StatsCardSkeleton() {
+  const opacity = useShimmer();
+  return (
+    <>
+      {/* Collection value row — mirrors free-user CTA: unlockTitle(fs15,mb2) + unlockSub(fs12), chevron(fs24) */}
+      <View style={statsStyles.valueRow}>
+        <View style={statsStyles.valueLeft}>
+          <Bone width={170} height={19} borderRadius={3} opacity={opacity} />
+          <Bone width={220} height={15} borderRadius={3} style={statsStyles.subBone} opacity={opacity} />
+        </View>
+        <Bone width={12} height={28} borderRadius={3} opacity={opacity} />
+      </View>
+
+      {/* Divider */}
+      <View style={statsStyles.divider} />
+
+      {/* Stats row — paddingVertical:16 each side */}
+      <View style={statsStyles.statsRow}>
+        {/* Games */}
+        <View style={statsStyles.statItem}>
+          <Text style={statsStyles.staticLabel}>Games</Text>
+          <View style={statsStyles.iconRow}>
+            <Gamepad2 size={18} color="#475569" />
+            <Bone width={36} height={30} borderRadius={4} opacity={opacity} />
+          </View>
+          <Text style={statsStyles.staticSubLabel}>In your collection</Text>
+        </View>
+        <View style={statsStyles.statDivider} />
+        {/* Consoles */}
+        <View style={statsStyles.statItem}>
+          <Text style={statsStyles.staticLabel}>Consoles</Text>
+          <View style={statsStyles.iconRow}>
+            <Joystick size={18} color="#475569" />
+            <Bone width={36} height={30} borderRadius={4} opacity={opacity} />
+          </View>
+          <Bone width="80%" height={4} borderRadius={2} style={statsStyles.progressBone} opacity={opacity} />
+        </View>
+      </View>
+    </>
+  );
+}
+
+const statsStyles = StyleSheet.create({
+  valueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+  },
+  valueLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  subBone: {
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    marginHorizontal: 20,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    paddingVertical: 16,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  iconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+  },
+  staticLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#f1f5f9',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  staticSubLabel: {
+    fontSize: 11,
+    color: '#64748b',
+    marginTop: 4,
+  },
+  progressBone: {
+    marginTop: 8,
   },
 });
 

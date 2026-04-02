@@ -61,9 +61,6 @@ const PLATFORM_ALIASES: Record<string, string> = {
   // IGDB's canonical name is "Neo Geo AES" (the home console)
   'Neo Geo MVS': 'Neo Geo AES',
 
-  // ── Xbox Series variants → Xbox Series X|S ───────────────────────
-  'Xbox Series X': 'Xbox Series X|S',
-  'Xbox Series S': 'Xbox Series X|S',
 };
 
 /**
@@ -94,13 +91,14 @@ const ALLOWED_PLATFORMS = new Set([
   // ── Nintendo — handheld ───────────────────────────────────────────
   'Game Boy',               // Game Boy / Game Boy Color (merged via alias; display name overridden below)
   'Game Boy Advance',
+  'Virtual Boy',
   'Nintendo DS',            // DS / DSi (merged via alias)
   'Nintendo 3DS',           // 3DS / 2DS / New 3DS (merged via alias)
 
   // ── Microsoft ─────────────────────────────────────────────────────
   'Xbox',
   'Xbox 360',
-  'Xbox Series X|S',        // Series X + Series S (merged via alias)
+  'Xbox One',
 
   // ── Sega ──────────────────────────────────────────────────────────
   'Sega Master System/Mark III', // IGDB canonical; Mark III + "Sega Master System" merged via alias
@@ -111,13 +109,16 @@ const ALLOWED_PLATFORMS = new Set([
 
   // ── Atari ─────────────────────────────────────────────────────────
   'Atari 2600',               // Atari 2600 / 7800 (merged via alias; display name overridden below)
+  'Atari Jaguar',
   'Atari Lynx',
 
   // ── NEC ───────────────────────────────────────────────────────────
   'TurboGrafx-16/PC Engine', // IGDB canonical; TurboGrafx-16 + SuperGrafx merged via alias
+  'TurboGrafx-CD/PC Engine CD',
 
   // ── SNK ───────────────────────────────────────────────────────────
   'Neo Geo AES',            // IGDB canonical; Neo Geo MVS merged via alias
+  'Neo Geo CD',
   'Neo Geo Pocket',         // NGP + NGP Color (merged via alias)
 
   // ── Bandai ────────────────────────────────────────────────────────
@@ -141,11 +142,12 @@ const PLATFORM_DISPLAY_NAME: Record<string, string> = {
   'Nintendo 64':                         'N64',
   'Nintendo GameCube':                   'GameCube',
   // Nintendo handheld
-  'Game Boy':     'Game Boy / Game Boy Color',
+  'Game Boy':     'GB Color',
   'Nintendo DS':  'DS',
   'Nintendo 3DS': '3DS',
   // Atari
   'Atari 2600': 'Atari 2600 / 7800',
+  'Atari Jaguar': 'Jaguar',
   // Sony
   'PlayStation Portable': 'PSP',
   'PlayStation Vita':     'PS Vita',
@@ -156,11 +158,109 @@ const PLATFORM_DISPLAY_NAME: Record<string, string> = {
   'Sega Saturn':             'Saturn',
   // NEC
   'TurboGrafx-16/PC Engine': 'PC Engine / TurboGrafx-16',
+  'TurboGrafx-CD/PC Engine CD': 'PC Engine CD / TurboGrafx-CD',
   // SNK
   'Neo Geo AES':    'Neo Geo',
+  'Neo Geo CD':     'Neo Geo CD',
   'Neo Geo Pocket': 'Neo Geo Pocket / Pocket Color',
   // Bandai
   'WonderSwan': 'WonderSwan / WonderSwan Color',
+};
+
+type PlatformType = 'home' | 'handheld';
+
+const PLATFORM_TYPE: Record<string, PlatformType> = {
+  // Nintendo — home
+  'Nintendo Entertainment System': 'home',
+  'Super Nintendo Entertainment System': 'home',
+  'Nintendo 64': 'home',
+  'Nintendo GameCube': 'home',
+  'Wii': 'home',
+  'Wii U': 'home',
+  // Nintendo — handheld
+  'Game Boy': 'handheld',
+  'Game Boy Advance': 'handheld',
+  'Virtual Boy': 'handheld',
+  'Nintendo DS': 'handheld',
+  'Nintendo 3DS': 'handheld',
+  // Sony — home
+  'PlayStation': 'home',
+  'PlayStation 2': 'home',
+  'PlayStation 3': 'home',
+  // Sony — handheld
+  'PlayStation Portable': 'handheld',
+  'PlayStation Vita': 'handheld',
+  // Microsoft — home
+  'Xbox': 'home',
+  'Xbox 360': 'home',
+  'Xbox One': 'home',
+  // Sega — home
+  'Sega Master System/Mark III': 'home',
+  'Sega Mega Drive/Genesis': 'home',
+  'Sega Saturn': 'home',
+  'Dreamcast': 'home',
+  // Sega — handheld
+  'Sega Game Gear': 'handheld',
+  // Atari — home
+  'Atari 2600': 'home',
+  'Atari Jaguar': 'home',
+  // Atari — handheld
+  'Atari Lynx': 'handheld',
+  // NEC — home
+  'TurboGrafx-16/PC Engine': 'home',
+  'TurboGrafx-CD/PC Engine CD': 'home',
+  // SNK — home
+  'Neo Geo AES': 'home',
+  'Neo Geo CD': 'home',
+  // SNK — handheld
+  'Neo Geo Pocket': 'handheld',
+  // Bandai — handheld
+  'WonderSwan': 'handheld',
+};
+
+const PLATFORM_RELEASE_YEAR: Record<string, number> = {
+  // Nintendo — home
+  'Nintendo Entertainment System': 1983,
+  'Super Nintendo Entertainment System': 1990,
+  'Nintendo 64': 1996,
+  'Nintendo GameCube': 2001,
+  'Wii': 2006,
+  'Wii U': 2012,
+  // Nintendo — handheld
+  'Game Boy': 1989,
+  'Game Boy Advance': 2001,
+  'Virtual Boy': 1995,
+  'Nintendo DS': 2004,
+  'Nintendo 3DS': 2011,
+  // Sony
+  'PlayStation': 1994,
+  'PlayStation 2': 2000,
+  'PlayStation 3': 2006,
+  'PlayStation Portable': 2004,
+  'PlayStation Vita': 2011,
+  // Microsoft
+  'Xbox': 2001,
+  'Xbox 360': 2005,
+  'Xbox One': 2013,
+  // Sega
+  'Sega Master System/Mark III': 1985,
+  'Sega Mega Drive/Genesis': 1988,
+  'Sega Saturn': 1994,
+  'Dreamcast': 1998,
+  'Sega Game Gear': 1990,
+  // Atari
+  'Atari 2600': 1977,
+  'Atari Jaguar': 1993,
+  'Atari Lynx': 1989,
+  // NEC
+  'TurboGrafx-16/PC Engine': 1987,
+  'TurboGrafx-CD/PC Engine CD': 1988,
+  // SNK
+  'Neo Geo AES': 1990,
+  'Neo Geo CD': 1994,
+  'Neo Geo Pocket': 1998,
+  // Bandai
+  'WonderSwan': 1999,
 };
 
 const PLATFORM_MANUFACTURER: Record<string, string> = {
@@ -174,6 +274,7 @@ const PLATFORM_MANUFACTURER: Record<string, string> = {
 
   'Game Boy': 'Nintendo',
   'Game Boy Advance': 'Nintendo',
+  'Virtual Boy': 'Nintendo',
   'Nintendo DS': 'Nintendo',
   'Nintendo 3DS': 'Nintendo',
   // Sony
@@ -186,7 +287,7 @@ const PLATFORM_MANUFACTURER: Record<string, string> = {
   // Microsoft
   'Xbox': 'Microsoft',
   'Xbox 360': 'Microsoft',
-  'Xbox Series X|S': 'Microsoft',
+  'Xbox One': 'Microsoft',
   // Sega
   'Sega Master System/Mark III': 'Sega',
   'Sega Mega Drive/Genesis': 'Sega',
@@ -195,11 +296,14 @@ const PLATFORM_MANUFACTURER: Record<string, string> = {
   'Sega Game Gear': 'Sega',
   // Atari
   'Atari 2600': 'Atari',
+  'Atari Jaguar': 'Atari',
   'Atari Lynx': 'Atari',
   // NEC
   'TurboGrafx-16/PC Engine': 'NEC',
+  'TurboGrafx-CD/PC Engine CD': 'NEC',
   // SNK
   'Neo Geo AES': 'SNK',
+  'Neo Geo CD': 'SNK',
   'Neo Geo Pocket': 'SNK',
   // Bandai
   'WonderSwan': 'Bandai',
@@ -278,7 +382,8 @@ export async function syncConsoles(
     slug: p.slug,
     summary: p.summary ?? null,
     manufacturer: PLATFORM_MANUFACTURER[p.name] ?? p.platform_family?.name ?? null,
-    release_year: null as number | null,
+    platform_type: PLATFORM_TYPE[p.name] ?? null,
+    release_year: PLATFORM_RELEASE_YEAR[p.name] ?? null,
     logo_url: p.platform_logo?.image_id ?? null,
     updated_at: new Date().toISOString(),
   }));

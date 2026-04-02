@@ -1906,6 +1906,28 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - RNCMaskedView (0.3.2):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - RNGoogleMobileAds (16.0.3):
     - Google-Mobile-Ads-SDK (= 12.14.0)
     - GoogleUserMessagingPlatform (= 3.1.0)
@@ -2127,6 +2149,7 @@ DEPENDENCIES:
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - ReactNativeDependencies (from `../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
+  - "RNCMaskedView (from `../node_modules/@react-native-masked-view/masked-view`)"
   - RNGoogleMobileAds (from `../node_modules/react-native-google-mobile-ads`)
   - RNPurchases (from `../node_modules/react-native-purchases`)
   - RNScreens (from `../node_modules/react-native-screens`)
@@ -2295,6 +2318,8 @@ EXTERNAL SOURCES:
     :podspec: "../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec"
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
+  RNCMaskedView:
+    :path: "../node_modules/@react-native-masked-view/masked-view"
   RNGoogleMobileAds:
     :path: "../node_modules/react-native-google-mobile-ads"
   RNPurchases:
@@ -2389,6 +2414,7 @@ SPEC CHECKSUMS:
   ReactNativeDependencies: f84f6bafa0e58ec0c07d21e387259939fa038f42
   RevenueCat: f352b3661288080bd8bf30bbb96e331940e73c88
   RNCAsyncStorage: 3a4f5e2777dae1688b781a487923a08569e27fe4
+  RNCMaskedView: d2578d41c59b936db122b2798ba37e4722d21035
   RNGoogleMobileAds: 804e1a6954148b6124ddeb51e4c26fed244e0050
   RNPurchases: 4bd4166900648355289ec7cc174d75d4d4bb99e2
   RNScreens: 6cb648bdad8fe9bee9259fe144df95b6d1d5b707

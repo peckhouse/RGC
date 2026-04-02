@@ -14,7 +14,7 @@
 
 import dotenv from 'dotenv';
 import {IGDBClient, IGDBLocalization} from './igdbClient';
-import {syncConsoles} from './syncConsoles';
+import {syncConsoles, PlatformRemap} from './syncConsoles';
 import {supabase} from './supabaseClient';
 
 dotenv.config();
@@ -47,6 +47,7 @@ const PLATFORMS: Array<{ids: number[]; label: string}> = [
   // ── Nintendo — handheld ───────────────────────────────────────────────────
   {ids: [33, 22],   label: 'Game Boy / Game Boy Color'},
   {ids: [24],       label: 'Game Boy Advance'},
+  {ids: [87],       label: 'Virtual Boy'},
   {ids: [20],       label: 'Nintendo DS'},
   {ids: [37, 137],  label: '3DS / New 3DS'},
 
@@ -60,7 +61,7 @@ const PLATFORMS: Array<{ids: number[]; label: string}> = [
   // ── Microsoft ─────────────────────────────────────────────────────────────
   {ids: [11],       label: 'Xbox'},
   {ids: [12],       label: 'Xbox 360'},
-  {ids: [169, 170], label: 'Xbox Series X|S'},
+  {ids: [49],       label: 'Xbox One'},
 
   // ── Sega ──────────────────────────────────────────────────────────────────
   {ids: [35, 64],   label: 'Master System / Mark III'},
@@ -72,13 +73,16 @@ const PLATFORMS: Array<{ids: number[]; label: string}> = [
 
   // ── Atari ─────────────────────────────────────────────────────────────────
   {ids: [59, 60],   label: 'Atari 2600 / 7800'},
+  {ids: [62],       label: 'Atari Jaguar'},
   {ids: [61],       label: 'Atari Lynx'},
 
   // ── NEC ───────────────────────────────────────────────────────────────────
   {ids: [86, 74],   label: 'TurboGrafx-16 / PC Engine'},
+  {ids: [150],      label: 'TurboGrafx-CD / PC Engine CD'},
 
   // ── SNK ───────────────────────────────────────────────────────────────────
   {ids: [80],       label: 'Neo Geo'},
+  {ids: [136],      label: 'Neo Geo CD'},
   {ids: [119, 120], label: 'Neo Geo Pocket / Pocket Color'},
 
   // ── Bandai ────────────────────────────────────────────────────────────────
@@ -108,13 +112,51 @@ function pickCover(
   return globalCover ?? null;
 }
 
+// ── Hack / homebrew filter ────────────────────────────────────────────────────
+
+const SUMMARY_BLOCK_PATTERNS = [
+  /\bhack\b/i,
+  /\brom\s*hack/i,
+  /\brom\s*hacks\b/i,
+  /\bromhack/i,
+  /\bhomebrew\b/i,
+  /\bmod\b/i,
+];
+
+const KEYWORD_BLOCKLIST = new Set([
+  'unofficial',
+  'rom hack',
+  'romhack',
+  'hack',
+  'homebrew',
+  'mod',
+]);
+
+function isHackOrHomebrew(game: {summary?: string; keywords?: {name: string}[]}): boolean {
+  if (game.summary) {
+    for (const pat of SUMMARY_BLOCK_PATTERNS) {
+      if (pat.test(game.summary)) return true;
+    }
+  }
+  if (game.keywords) {
+    for (const kw of game.keywords) {
+      if (KEYWORD_BLOCKLIST.has(kw.name.toLowerCase())) return true;
+    }
+  }
+  return false;
+}
+
 // ── Per-platform sync ─────────────────────────────────────────────────────────
 
 async function syncPlatformGames(
   igdb: IGDBClient,
   platform: {ids: number[]; label: string},
+  remap: PlatformRemap,
 ): Promise<{upserted: number; noRegion: number}> {
   const {ids, label} = platform;
+
+  // Canonical platform ID = the one that is NOT an alias (exists in consoles table)
+  const canonicalId = ids.find(id => !(id in remap)) ?? ids[0];
 
   // Step 1 — fetch games, deduplicate across platform IDs
   type IGDBGame = Awaited<ReturnType<typeof igdb.fetchGamesByPlatform>>[number];
@@ -133,9 +175,12 @@ async function syncPlatformGames(
     }
   }
 
-  const games = [...gameMap.values()];
+  const allGames = [...gameMap.values()];
+  const filtered = allGames.filter(g => !isHackOrHomebrew(g));
+  console.log(`   ${allGames.length} games fetched, ${allGames.length - filtered.length} hacks/homebrews excluded`);
+
+  const games = filtered;
   const gameIds = games.map(g => g.id);
-  console.log(`   ${games.length} games fetched`);
 
   // Step 2 — fetch release dates for all platforms
   type RD = Awaited<ReturnType<typeof igdb.fetchReleaseDates>>[number];
@@ -200,6 +245,7 @@ async function syncPlatformGames(
       regionCount++;
       toUpsert.push({
         igdb_id:      game.id,
+        platform_id:  canonicalId,
         region:       regionCode,
         name:         game.name,
         slug:         game.slug,
@@ -209,7 +255,7 @@ async function syncPlatformGames(
         rating:       game.rating != null ? Math.round(game.rating) / 10 : null,
         rating_count: game.rating_count ?? 0,
         genres:       game.genres?.map(g => g.name) ?? [],
-        platforms:    game.platforms ?? ids,
+        platforms:    [canonicalId],
         developer,
         publisher,
         screenshots:  game.screenshots?.map(s => s.image_id) ?? [],
@@ -229,7 +275,7 @@ async function syncPlatformGames(
   if (!DRY_RUN) {
     for (let i = 0; i < toUpsert.length; i += UPSERT_BATCH) {
       const batch = toUpsert.slice(i, i + UPSERT_BATCH);
-      const {error} = await supabase.from('games').upsert(batch, {onConflict: 'igdb_id,region'});
+      const {error} = await supabase.from('games').upsert(batch, {onConflict: 'igdb_id,platform_id,region'});
       if (error) console.error(`   ❌ Batch ${Math.floor(i / UPSERT_BATCH) + 1} failed: ${error.message}`);
     }
   }
@@ -256,7 +302,7 @@ async function main() {
   // ── Step 1: Consoles ────────────────────────────────────────────────────────
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('📺 Syncing consoles...');
-  const {count: consolesCount} = await syncConsoles(igdb);
+  const {count: consolesCount, remap} = await syncConsoles(igdb);
   console.log(`✅ ${consolesCount} consoles synced\n`);
 
   if (DRY_RUN) {
@@ -273,7 +319,7 @@ async function main() {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`🕹️  [${i + 1}/${PLATFORMS.length}] ${platform.label}`);
 
-    const {upserted} = await syncPlatformGames(igdb, platform);
+    const {upserted} = await syncPlatformGames(igdb, platform, remap);
     totalUpserted += upserted;
 
     const elapsed = Math.round((Date.now() - startTime) / 1000);

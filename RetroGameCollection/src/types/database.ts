@@ -55,6 +55,7 @@ export interface Console {
   slug: string;
   summary: string | null;
   manufacturer: string | null;
+  platform_type: 'home' | 'handheld' | null;
   release_year: number | null;
   logo_url: string | null;
   created_at: string;
@@ -66,6 +67,8 @@ export interface Game {
   id: number;
   /** IGDB game ID — shared across EU/NA/JP rows for the same game. */
   igdb_id: number;
+  /** IGDB platform ID — identifies which console this row belongs to. */
+  platform_id: number;
   /** Regional variant: one row per region that has an IGDB release date. */
   region: 'EU' | 'NA' | 'JP';
   name: string;

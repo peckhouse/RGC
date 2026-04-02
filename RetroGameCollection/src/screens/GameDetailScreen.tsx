@@ -361,11 +361,11 @@ function DetailRow({label, value}: {label: string; value: string}) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#0f172a'},
+  container: {flex: 1, backgroundColor: '#0A0A0F'},
   content: {paddingBottom: 48},
   center: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0A0A0F',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0A0A0F',
   },
   copyChipDot: {
     width: 7,
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   conditionChipActive: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0A0A0F',
   },
   conditionChipText: {
     fontSize: 11,

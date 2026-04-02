@@ -16,6 +16,7 @@ import {igdbImageUrl} from '../api/games';
 import type {WishlistStackParamList, RootStackParamList} from '../navigation/AppNavigator';
 import type {WishlistEntryWithDetails} from '../api/wishlist';
 import {useProStatus} from '../hooks/useProStatus';
+import ScreenLogo from '../components/common/ScreenLogo';
 
 type Nav = NativeStackNavigationProp<WishlistStackParamList & RootStackParamList>;
 
@@ -180,6 +181,7 @@ export default function WishlistScreen() {
         }
         ListHeaderComponent={
           <View style={styles.pageHeader}>
+            <ScreenLogo />
             <Text style={styles.title}>Wishlist</Text>
           </View>
         }
@@ -201,10 +203,10 @@ export default function WishlistScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#0f172a'},
+  container: {flex: 1, backgroundColor: '#0A0A0F'},
   center: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0A0A0F',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
@@ -213,6 +215,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingTop: 64,
     paddingBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   title: {fontSize: 28, fontWeight: '800', color: '#f1f5f9'},
   subtitle: {fontSize: 13, color: '#64748b', marginTop: 4},
@@ -243,7 +247,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 68,
     borderRadius: 5,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0A0A0F',
   },
   coverPlaceholder: {alignItems: 'center', justifyContent: 'center'},
   coverPlaceholderText: {fontSize: 18},

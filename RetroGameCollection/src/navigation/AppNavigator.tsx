@@ -1,5 +1,5 @@
-import React, {useEffect} from 'react';
-import {View, Image, StyleSheet} from 'react-native';
+import React, {useEffect, useRef} from 'react';
+import {View, Image, StyleSheet, Animated, Pressable} from 'react-native';
 import {NavigationContainer, StackActions, useNavigationContainerRef} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
@@ -71,14 +71,21 @@ export type WishlistStackParamList = {
   GameDetail: GameDetailParams;
 };
 
+export type HomeStackParamList = {
+  HomeScreen: undefined;
+  GameDetail: GameDetailParams;
+};
+
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const ConsolesStack = createNativeStackNavigator<ConsolesStackParamList>();
 const CollectionStack = createNativeStackNavigator<CollectionStackParamList>();
 const WishlistStack = createNativeStackNavigator<WishlistStackParamList>();
 
-const ICON_SIZE = 28;
+const ICON_SIZE = 22;
+const BG = '#0A0A0F';
 
 type TabIconProps = {color: string; size: number; focused: boolean};
 
@@ -96,6 +103,23 @@ function CollectionTabIcon({color}: TabIconProps) {
 
 function WishlistTabIcon({color}: TabIconProps) {
   return <Star size={ICON_SIZE} color={color} />;
+}
+
+function AnimatedTabButton({children, onPress, onLongPress, style}: any) {
+  const scale = useRef(new Animated.Value(1)).current;
+  function handlePressIn() {
+    Animated.spring(scale, {toValue: 0.82, useNativeDriver: true, speed: 50, bounciness: 0}).start();
+  }
+  function handlePressOut() {
+    Animated.spring(scale, {toValue: 1, useNativeDriver: true, speed: 30, bounciness: 8}).start();
+  }
+  return (
+    <Animated.View style={[style, {transform: [{scale}]}]}>
+      <Pressable onPress={onPress} onLongPress={onLongPress} onPressIn={handlePressIn} onPressOut={handlePressOut} style={styles.tabButtonInner}>
+        {children}
+      </Pressable>
+    </Animated.View>
+  );
 }
 
 function AccountTabIcon({color, focused}: TabIconProps) {
@@ -122,10 +146,20 @@ function AccountTabIcon({color, focused}: TabIconProps) {
 const darkHeader = {
   headerShown: true,
   title: '',
-  headerStyle: {backgroundColor: '#0f172a'},
+  headerStyle: {backgroundColor: BG},
   headerTintColor: '#6366f1',
   headerShadowVisible: false,
+  contentStyle: {backgroundColor: BG},
 } as const;
+
+function HomeNavigator() {
+  return (
+    <HomeStack.Navigator screenOptions={darkHeader}>
+      <HomeStack.Screen name="HomeScreen" component={HomeScreen} options={{headerShown: false}} />
+      <HomeStack.Screen name="GameDetail" component={GameDetailScreen} />
+    </HomeStack.Navigator>
+  );
+}
 
 function ConsolesNavigator() {
   return (
@@ -160,7 +194,7 @@ function WishlistNavigator() {
 
 function AuthNavigator() {
   return (
-    <AuthStack.Navigator screenOptions={{headerShown: false}}>
+    <AuthStack.Navigator screenOptions={{headerShown: false, contentStyle: {backgroundColor: BG}}}>
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     </AuthStack.Navigator>
@@ -174,23 +208,35 @@ function MainTabs() {
         tabBarActiveTintColor: '#6366f1',
         tabBarInactiveTintColor: '#9ca3af',
         tabBarStyle: {
-          backgroundColor: '#1e293b',
-          borderTopColor: '#334155',
-          height: 60,
+          backgroundColor: '#0a1a35',
+          borderTopWidth: 1,
+          borderTopColor: 'rgba(59, 130, 246, 0.3)',
+          paddingTop: 10,
+          paddingBottom: 10,
+          height: 68,
           paddingLeft: 12,
           paddingRight: 12,
+          shadowColor: '#3B82F6',
+          shadowOffset: {width: 0, height: -4},
+          shadowOpacity: 0.2,
+          shadowRadius: 12,
+          elevation: 10,
         },
         tabBarItemStyle: {
           flex: 1,
-          justifyContent: 'center',
           alignItems: 'center',
-          paddingTop: 8,
-          paddingBottom: 8,
+          justifyContent: 'center',
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500',
+          marginTop: 2,
         },
         headerShown: false,
-        tabBarShowLabel: false,
+        sceneStyle: {backgroundColor: BG},
+        tabBarButton: AnimatedTabButton,
       }}>
-      <Tab.Screen name="Home" component={HomeScreen} options={{tabBarIcon: HomeTabIcon}} />
+      <Tab.Screen name="Home" component={HomeNavigator} options={{tabBarIcon: HomeTabIcon}} />
       <Tab.Screen
         name="Consoles"
         component={ConsolesNavigator}
@@ -233,7 +279,7 @@ function MainTabs() {
           },
         })}
       />
-      <Tab.Screen name="Account" component={AccountScreen} options={{tabBarIcon: AccountTabIcon}} />
+      <Tab.Screen name="Account" component={AccountScreen} options={{tabBarIcon: AccountTabIcon, tabBarLabel: 'Profile', headerShown: false}} />
     </Tab.Navigator>
   );
 }
@@ -263,7 +309,7 @@ export default function AppNavigator() {
         const route = navigationRef.getCurrentRoute();
         if (route) Analytics.screen(route.name);
       }}>
-      <RootStack.Navigator screenOptions={{headerShown: false}}>
+      <RootStack.Navigator screenOptions={{headerShown: false, contentStyle: {backgroundColor: BG}}}>
         {session ? (
           <RootStack.Screen name="Main" component={MainTabs} />
         ) : (
@@ -282,6 +328,11 @@ export default function AppNavigator() {
 const styles = StyleSheet.create({
   splash: {
     flex: 1,
-    backgroundColor: '#0A0A0F',
+    backgroundColor: BG,
+  },
+  tabButtonInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

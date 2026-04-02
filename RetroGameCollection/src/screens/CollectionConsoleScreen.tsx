@@ -179,10 +179,10 @@ export default function CollectionConsoleScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#0f172a'},
+  container: {flex: 1, backgroundColor: '#0A0A0F'},
   center: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0A0A0F',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,

@@ -12,7 +12,7 @@ async function fetchGamesByConsole(consoleId: number): Promise<Game[]> {
     const {data, error} = await supabase
       .from('games')
       .select('*')
-      .contains('platforms', [consoleId])
+      .eq('platform_id', consoleId)
       .order('name')
       .range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
@@ -72,7 +72,7 @@ async function fetchGameCountByConsole(consoleId: number): Promise<number> {
     const {data, error} = await supabase
       .from('games')
       .select('igdb_id')
-      .contains('platforms', [consoleId])
+      .eq('platform_id', consoleId)
       .range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
     allIds.push(...(data ?? []).map(g => (g as any).igdb_id));
@@ -108,5 +108,6 @@ export function igdbImageUrl(
   size: IGDBImageSize = 't_cover_big',
 ): string | null {
   if (!imageId) return null;
+  if (imageId.startsWith('http://') || imageId.startsWith('https://')) return imageId;
   return `https://images.igdb.com/igdb/image/upload/${size}/${imageId}.jpg`;
 }

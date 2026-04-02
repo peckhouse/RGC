@@ -119,7 +119,7 @@ async function main() {
     for (const [regionCode, releaseDate] of regionDates) {
       regionCount++;
       toUpsert.push({
-        igdb_id: game.id, region: regionCode, name: game.name, slug: game.slug,
+        igdb_id: game.id, platform_id: PLATFORM_ID, region: regionCode, name: game.name, slug: game.slug,
         summary: game.summary ?? null,
         cover_url: pickCover(game.cover?.image_id, locs, BUCKET_IGDB_REGION[regionCode]),
         release_date: releaseDate,
@@ -157,7 +157,7 @@ async function main() {
   const BATCH = 50;
   for (let i = 0; i < toUpsert.length; i += BATCH) {
     const batch = toUpsert.slice(i, i + BATCH);
-    const {error} = await supabase.from('games').upsert(batch, {onConflict: 'igdb_id,region'});
+    const {error} = await supabase.from('games').upsert(batch, {onConflict: 'igdb_id,platform_id,region'});
     if (error) console.error(`  ❌ Batch ${Math.floor(i / BATCH) + 1} failed: ${error.message}`);
     else console.log(`  ✅ Batch ${Math.floor(i / BATCH) + 1}: ${batch.length} entries`);
   }
