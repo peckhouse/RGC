@@ -12,7 +12,7 @@ import {GameListSkeleton} from '../components/common/Skeleton';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import type {NativeStackNavigationProp, NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMyCollection} from '../api/collection';
-import {igdbImageUrl, useGameCountByConsole} from '../api/games';
+import {igdbImageUrl, useGameStatsForConsoleRegion} from '../api/games';
 import ProgressBar from '../components/common/ProgressBar';
 import type {CollectionStackParamList} from '../navigation/AppNavigator';
 import type {CollectionEntryWithDetails} from '../api/collection';
@@ -90,7 +90,8 @@ export default function CollectionConsoleScreen() {
   const {consoleId, consoleName} = route.params;
 
   const {data: collection, isLoading, isRefetching, isError, refetch} = useMyCollection();
-  const {data: totalGames = 0} = useGameCountByConsole(consoleId);
+  const {data: stats} = useGameStatsForConsoleRegion(consoleId, 'EU');
+  const totalGames = stats?.total ?? 0;
 
   const entries = useMemo(() => {
     if (!collection) return [];

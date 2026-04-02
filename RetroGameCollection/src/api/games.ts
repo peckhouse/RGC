@@ -94,19 +94,30 @@ async function fetchGameStatsForConsoleRegion(
     .eq('region', region);
   if (totalErr) throw totalErr;
 
-  // Owned games: count user_collections entries that match this console
-  // and join to games in this region
+  // Owned games: count collection entries for this console whose game_id
+  // is in the set of game IDs for this region
   const {data: {user} = {user: null}} = await supabase.auth.getUser();
   let owned = 0;
   if (user) {
-    const {count: ownedCount, error: ownedErr} = await supabase
-      .from('user_collections')
-      .select('id, games!inner(id)', {count: 'exact', head: true})
-      .eq('user_id', user.id)
-      .eq('console_id', consoleId)
-      .eq('games.region', region);
-    if (ownedErr) throw ownedErr;
-    owned = ownedCount ?? 0;
+    // Get all game IDs for this console + region
+    const {data: regionGameIds, error: gamesErr} = await supabase
+      .from('games')
+      .select('id')
+      .eq('platform_id', consoleId)
+      .eq('region', region);
+    if (gamesErr) throw gamesErr;
+
+    if (regionGameIds && regionGameIds.length > 0) {
+      const ids = regionGameIds.map((g: any) => g.id as number);
+      const {count: ownedCount, error: ownedErr} = await supabase
+        .from('user_collections')
+        .select('*', {count: 'exact', head: true})
+        .eq('user_id', user.id)
+        .eq('console_id', consoleId)
+        .in('game_id', ids);
+      if (ownedErr) throw ownedErr;
+      owned = ownedCount ?? 0;
+    }
   }
 
   return {total: total ?? 0, owned};

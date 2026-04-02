@@ -70,6 +70,7 @@ export function useAddToCollection() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({queryKey: ['collection']});
+      queryClient.invalidateQueries({queryKey: ['games', 'stats']});
       Toast.show({type: 'success', text1: 'Added to collection', visibilityTime: 2500});
       Analytics.collectionGameAdded({
         gameId: variables.gameId,
@@ -95,6 +96,7 @@ export function useRemoveFromCollection() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey: ['collection']});
+      queryClient.invalidateQueries({queryKey: ['games', 'stats']});
       Toast.show({type: 'success', text1: 'Removed from collection', visibilityTime: 2500});
       Analytics.collectionGameRemoved();
     },

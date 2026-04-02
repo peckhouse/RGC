@@ -150,6 +150,7 @@ export function useMoveToCollection() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({queryKey: ['wishlist']});
       queryClient.invalidateQueries({queryKey: ['collection']});
+      queryClient.invalidateQueries({queryKey: ['games', 'stats']});
       Toast.show({type: 'success', text1: 'Moved to collection', text2: 'Removed from wishlist', visibilityTime: 3000});
       Analytics.wishlistMovedToCollection({
         gameId: variables.gameId,
