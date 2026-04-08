@@ -119,6 +119,8 @@ export interface UserCollection {
   console_id: number;
   acquired_date: string;
   condition: 'loose' | 'inbox' | 'complete' | null;
+  /** Physical condition rating: 1 (poor) to 5 (mint). */
+  game_condition: 1 | 2 | 3 | 4 | 5 | null;
   notes: string | null;
   created_at: string;
 }

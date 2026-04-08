@@ -51,10 +51,12 @@ export function useAddToCollection() {
       gameId,
       consoleId,
       condition = 'loose',
+      game_condition,
     }: {
       gameId: number;
       consoleId: number;
       condition?: UserCollection['condition'];
+      game_condition?: UserCollection['game_condition'];
     }) => {
       const {
         data: {user},
@@ -65,6 +67,7 @@ export function useAddToCollection() {
         game_id: gameId,
         console_id: consoleId,
         condition,
+        game_condition: game_condition ?? null,
       });
       if (error) throw error;
     },

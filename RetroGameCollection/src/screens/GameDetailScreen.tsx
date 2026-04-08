@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from 'react';
+import React, {useState, useMemo, useEffect, useCallback, useRef} from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,19 @@ import {
   ScrollView,
   FlatList,
   TouchableOpacity,
+  Pressable,
+  Animated,
   ActivityIndicator,
+  Modal,
   StyleSheet,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackScreenProps, NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {Star, X, Plus, Users, ChevronLeft} from 'lucide-react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useGame, igdbImageUrl} from '../api/games';
+import {Fonts} from '../constants/fonts';
 import {
   useMyCollection,
   useAddToCollection,
@@ -37,8 +44,8 @@ type Condition = NonNullable<UserCollection['condition']>;
 const CONDITIONS: Condition[] = ['loose', 'inbox', 'complete'];
 const CONDITION_LABELS: Record<Condition, string> = {
   loose: 'Loose',
-  inbox: 'Inbox',
-  complete: 'Complete',
+  inbox: 'Game + Box',
+  complete: 'CIB',
 };
 const CONDITION_COLORS: Record<Condition, string> = {
   loose: '#64748b',
@@ -46,12 +53,47 @@ const CONDITION_COLORS: Record<Condition, string> = {
   complete: '#22c55e',
 };
 
+
+function AnimatedHeaderBtn({
+  style,
+  onPress,
+  disabled,
+  children,
+}: {
+  style?: any;
+  onPress: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+  return (
+    <Animated.View style={{transform: [{scale}]}}>
+      <Pressable
+        style={style}
+        onPress={onPress}
+        disabled={disabled}
+        onPressIn={() =>
+          Animated.spring(scale, {toValue: 0.82, useNativeDriver: true, speed: 50, bounciness: 0}).start()
+        }
+        onPressOut={() =>
+          Animated.spring(scale, {toValue: 1, useNativeDriver: true, speed: 30, bounciness: 8}).start()
+        }>
+        {children}
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 export default function GameDetailScreen({route}: Props) {
-  const {gameId, consoleId, consoleName} = route.params;
+  const {gameId, consoleId, collectionEntryId} = route.params;
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const {isPro} = useProStatus();
 
   const [selectedCondition, setSelectedCondition] = useState<Condition>('loose');
+  const [gameCondition, setGameCondition] = useState<1 | 2 | 3 | 4 | 5>(3);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [initializedFromCollection, setInitializedFromCollection] = useState(false);
 
   const {data: game, isLoading, isError} = useGame(gameId);
   const {data: collection} = useMyCollection();
@@ -70,7 +112,17 @@ export default function GameDetailScreen({route}: Props) {
   const ownedEntries = (collection ?? []).filter(
     e => e.game_id === gameId && e.console_id === consoleId,
   );
-  const isOwned = ownedEntries.length > 0;
+  // Initialize condition + stars from the specific collection entry (if navigated from collection)
+  // or from the first owned entry otherwise
+  useEffect(() => {
+    if (initializedFromCollection || ownedEntries.length === 0) return;
+    const entry = collectionEntryId
+      ? ownedEntries.find(e => e.id === collectionEntryId) ?? ownedEntries[0]
+      : ownedEntries[0];
+    if (entry.condition) setSelectedCondition(entry.condition as Condition);
+    if (entry.game_condition) setGameCondition(entry.game_condition as 1|2|3|4|5);
+    setInitializedFromCollection(true);
+  }, [ownedEntries, initializedFromCollection, collectionEntryId]);
 
   const wishlistEntry = wishlist?.find(
     e => e.game_id === gameId && e.console_id === consoleId,
@@ -79,27 +131,30 @@ export default function GameDetailScreen({route}: Props) {
 
   const isCollectionMutating =
     addToCollection.isPending || removeFromCollection.isPending;
-  const isWishlistMutating =
-    addToWishlist.isPending || removeFromWishlist.isPending;
 
-  function handleAddCopy() {
-    const isNewConsole = !ownedConsoleIds.has(consoleId);
-    if (!isPro && isNewConsole && ownedConsoleIds.size >= 5) {
-      navigation.navigate('Paywall', {reason: 'console-limit'});
-      return;
-    }
-    addToCollection.mutate({gameId, consoleId, condition: selectedCondition});
-    // Auto-remove from wishlist only when adding a complete copy
-    if (selectedCondition === 'complete' && isWishlisted && wishlistEntry) {
-      removeFromWishlist.mutate(wishlistEntry.id);
-    }
-  }
-
-  function handleToggleWishlist() {
+  const handleToggleWishlist = useCallback(() => {
     if (isWishlisted && wishlistEntry) {
       removeFromWishlist.mutate(wishlistEntry.id);
     } else {
       addToWishlist.mutate({gameId, consoleId, priority: 'medium'});
+    }
+  }, [isWishlisted, wishlistEntry, removeFromWishlist, addToWishlist, gameId, consoleId]);
+
+  const handleOpenAddModal = useCallback(() => setShowAddModal(true), []);
+
+  function handleAddCopy() {
+    const isNewConsole = !ownedConsoleIds.has(consoleId);
+    if (!isPro && isNewConsole && ownedConsoleIds.size >= 5) {
+      setShowAddModal(false);
+      navigation.navigate('Paywall', {reason: 'console-limit'});
+      return;
+    }
+    addToCollection.mutate({gameId, consoleId, condition: selectedCondition, game_condition: gameCondition});
+    setShowAddModal(false);
+    setSelectedCondition('loose');
+    setGameCondition(3);
+    if (selectedCondition === 'complete' && isWishlisted && wishlistEntry) {
+      removeFromWishlist.mutate(wishlistEntry.id);
     }
   }
 
@@ -127,9 +182,34 @@ export default function GameDetailScreen({route}: Props) {
     .filter((s): s is string => s !== null);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Cover + title */}
-      <View style={styles.hero}>
+    <View style={styles.container}>
+      {/* Custom header */}
+      <View style={[styles.customHeader, {paddingTop: insets.top}]}>
+        <AnimatedHeaderBtn
+          style={styles.headerBtn}
+          onPress={() => navigation.goBack()}>
+          <ChevronLeft size={22} color="#ffffff" />
+        </AnimatedHeaderBtn>
+        <View style={styles.headerSpacer} />
+        <AnimatedHeaderBtn
+          style={styles.headerBtn}
+          onPress={handleOpenAddModal}>
+          <Plus size={20} color="#3b82f6" />
+        </AnimatedHeaderBtn>
+        <AnimatedHeaderBtn
+          style={[styles.headerBtn, isWishlisted && styles.headerBtnWishlisted]}
+          onPress={handleToggleWishlist}>
+          <Star
+            size={20}
+            color={isWishlisted ? '#FF1B8D' : '#3b82f6'}
+            fill="transparent"
+          />
+        </AnimatedHeaderBtn>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content}>
+      {/* Cover — centered */}
+      <View style={styles.heroCover}>
         {cover ? (
           <Image source={{uri: cover}} style={styles.cover} resizeMode="cover" />
         ) : (
@@ -137,170 +217,186 @@ export default function GameDetailScreen({route}: Props) {
             <Text style={styles.coverPlaceholderEmoji}>🎮</Text>
           </View>
         )}
-        <View style={styles.heroInfo}>
-          <Text style={styles.title}>{game.name}</Text>
-          <Text style={styles.consoleName}>{consoleName}</Text>
-          <View style={styles.metaRow}>
-            {year ? <Text style={styles.metaText}>{year}</Text> : null}
-            {rating ? (
-              <View style={styles.ratingBadge}>
-                <Text style={styles.ratingText}>★ {rating}</Text>
-              </View>
-            ) : null}
-          </View>
+      </View>
+
+      {/* Title — centered */}
+      <Text style={styles.title}>{game.name}</Text>
+
+      {/* Region badge */}
+      <View style={styles.badgeRow}>
+        <View style={styles.regionBadge}>
+          <Text style={styles.regionBadgeText}>
+            {game.region} / {game.region === 'EU' ? 'PAL' : game.region === 'NA' ? 'NTSC' : 'NTSC-J'}
+          </Text>
         </View>
       </View>
 
-      {/* Collection section */}
-      <View style={styles.collectionSection}>
-        <Text style={styles.sectionLabel}>My Copies</Text>
+      {/* Meta line */}
+      <View style={styles.metaContainer}>
+        <View style={styles.metaRow}>
+          {year ? <Text style={styles.metaText}>{year}</Text> : null}
+          {year && game.genres[0] ? <Text style={styles.metaDot}>·</Text> : null}
+          {game.genres[0] ? <Text style={styles.metaText}>{game.genres[0]}</Text> : null}
+          {(year || game.genres[0]) && rating ? <Text style={styles.metaDot}>·</Text> : null}
+          {rating ? (
+            <View style={styles.metaItem}>
+              <Star size={12} color="#fbbf24" fill="#fbbf24" />
+              <Text style={styles.metaText}>{rating}</Text>
+            </View>
+          ) : null}
+          {game.max_players ? <Text style={styles.metaDot}>·</Text> : null}
+          {game.max_players ? (
+            <View style={styles.metaItem}>
+              <Users size={12} color="#94a3b8" />
+              <Text style={styles.metaText}>1-{game.max_players} Players</Text>
+            </View>
+          ) : null}
+        </View>
+      </View>
 
-        {/* Owned copies list */}
-        {ownedEntries.length > 0 && (
-          <View style={styles.copiesRow}>
+
+
+      {/* My Collection */}
+      {ownedEntries.length > 0 ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>
+            My Collection ({game.region} / {game.region === 'EU' ? 'PAL' : game.region === 'NA' ? 'NTSC' : 'NTSC-J'})
+          </Text>
+          <View style={styles.copiesList}>
+            <LinearGradient
+              colors={['#122a2a', '#0e2040', '#0a1530']}
+              locations={[0, 0.60, 1]}
+              start={{x: 1, y: 1}}
+              end={{x: 0, y: 0}}
+              style={styles.copiesGradient}
+            />
             {ownedEntries.map(entry => {
               const cond = (entry.condition ?? 'loose') as Condition;
+              const stars = entry.game_condition ?? 0;
               return (
-                <View
-                  key={entry.id}
-                  style={[
-                    styles.copyChip,
-                    {borderColor: CONDITION_COLORS[cond]},
-                  ]}>
-                  <View
-                    style={[
-                      styles.copyChipDot,
-                      {backgroundColor: CONDITION_COLORS[cond]},
-                    ]}
-                  />
-                  <Text style={[styles.copyChipLabel, {color: CONDITION_COLORS[cond]}]}>
-                    {CONDITION_LABELS[cond]}
+                <View key={entry.id} style={styles.copyRow}>
+                  <View style={[styles.copyConditionBadge, {borderColor: CONDITION_COLORS[cond], backgroundColor: CONDITION_COLORS[cond] + '22'}]}>
+                    <Text style={[styles.copyConditionText, {color: CONDITION_COLORS[cond]}]}>
+                      {CONDITION_LABELS[cond]}
+                    </Text>
+                  </View>
+                  <Text style={styles.copyStars}>
+                    {[1, 2, 3, 4, 5].map(s => (
+                      <Text key={s} style={{color: s <= stars ? '#fbbf24' : '#334155'}}>★</Text>
+                    ))}
                   </Text>
+                  <View style={{flex: 1}} />
                   <TouchableOpacity
                     onPress={() => removeFromCollection.mutate(entry.id)}
                     disabled={isCollectionMutating}
                     hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
-                    <Text style={styles.copyChipRemove}>✕</Text>
+                    <X size={16} color="#ffffff" />
                   </TouchableOpacity>
                 </View>
               );
             })}
           </View>
-        )}
-
-        {/* Condition picker + Add button */}
-        <View style={styles.addRow}>
-          <View style={styles.conditionPicker}>
-            {CONDITIONS.map(c => (
-              <TouchableOpacity
-                key={c}
-                style={[
-                  styles.conditionChip,
-                  selectedCondition === c && styles.conditionChipActive,
-                  selectedCondition === c && {borderColor: CONDITION_COLORS[c]},
-                ]}
-                onPress={() => setSelectedCondition(c)}
-                activeOpacity={0.7}>
-                <Text
-                  style={[
-                    styles.conditionChipText,
-                    selectedCondition === c && {color: CONDITION_COLORS[c]},
-                  ]}>
-                  {CONDITION_LABELS[c]}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <TouchableOpacity
-            style={styles.addCopyBtn}
-            onPress={handleAddCopy}
-            disabled={isCollectionMutating}
-            activeOpacity={0.8}>
-            {isCollectionMutating ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.addCopyBtnText}>
-                {isOwned ? '+ Copy' : '+ Add'}
-              </Text>
-            )}
-          </TouchableOpacity>
         </View>
-      </View>
+      ) : null}
 
-      {/* Wishlist button */}
-      <View style={styles.wishlistRow}>
+      {/* Add to collection modal */}
+      <Modal
+        visible={showAddModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddModal(false)}>
         <TouchableOpacity
-          style={[
-            styles.wishlistBtn,
-            isWishlisted && styles.wishlistBtnActive,
-          ]}
-          onPress={handleToggleWishlist}
-          disabled={isWishlistMutating}
-          activeOpacity={0.8}>
-          {isWishlistMutating ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.btnText}>
-              {isWishlisted ? '★ Wishlisted' : '☆ Wishlist'}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Genres */}
-      {game.genres.length > 0 ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Genres</Text>
-          <View style={styles.tagRow}>
-            {game.genres.map(g => (
-              <View key={g} style={styles.tag}>
-                <Text style={styles.tagText}>{g}</Text>
-              </View>
-            ))}
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowAddModal(false)}>
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <Text style={styles.modalTitle}>Add to Collection</Text>
+            <Text style={styles.modalLabel}>Type</Text>
+            <View style={styles.conditionPicker}>
+              {CONDITIONS.map(c => (
+                <TouchableOpacity
+                  key={c}
+                  style={[
+                    styles.conditionChip,
+                    selectedCondition === c && styles.conditionChipActive,
+                    selectedCondition === c && {borderColor: CONDITION_COLORS[c]},
+                  ]}
+                  onPress={() => setSelectedCondition(c)}
+                  activeOpacity={0.7}>
+                  <Text
+                    style={[
+                      styles.conditionChipText,
+                      selectedCondition === c && {color: CONDITION_COLORS[c]},
+                    ]}>
+                    {CONDITION_LABELS[c]}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.modalLabel}>Condition</Text>
+            <View style={styles.starPicker}>
+              {([1, 2, 3, 4, 5] as const).map(star => (
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => setGameCondition(star)}
+                  activeOpacity={0.7}
+                  hitSlop={{top: 6, bottom: 6, left: 4, right: 4}}>
+                  <Text style={[styles.star, star <= gameCondition && styles.starActive]}>★</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={styles.modalConfirmBtn}
+              onPress={handleAddCopy}
+              disabled={isCollectionMutating}
+              activeOpacity={0.8}>
+              {isCollectionMutating ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.modalConfirmText}>Add</Text>
+              )}
+            </TouchableOpacity>
           </View>
-        </View>
-      ) : null}
-
-      {/* Summary */}
-      {game.summary ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Summary</Text>
-          <Text style={styles.summary}>{game.summary}</Text>
-        </View>
-      ) : null}
+        </TouchableOpacity>
+      </Modal>
 
       {/* Details */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Details</Text>
-        <View style={styles.detailsCard}>
+        <View style={styles.detailsGrid}>
           {game.developer ? (
-            <DetailRow label="Developer" value={game.developer} />
+            <View style={styles.detailCell}>
+              <Text style={styles.detailLabel}>Developer:</Text>
+              <Text style={styles.detailValue}>{game.developer}</Text>
+            </View>
           ) : null}
           {game.publisher ? (
-            <DetailRow label="Publisher" value={game.publisher} />
+            <View style={styles.detailCell}>
+              <Text style={styles.detailLabel}>Publisher:</Text>
+              <Text style={styles.detailValue}>{game.publisher}</Text>
+            </View>
           ) : null}
-          {year ? <DetailRow label="Release Year" value={year} /> : null}
-          {game.max_players ? (
-            <DetailRow label="Max Players" value={String(game.max_players)} />
+          {year ? (
+            <View style={styles.detailCell}>
+              <Text style={styles.detailLabel}>Release Date:</Text>
+              <Text style={styles.detailValue}>{game.release_date ?? year}</Text>
+            </View>
           ) : null}
-          {game.rating_count > 0 ? (
-            <DetailRow
-              label="Ratings"
-              value={game.rating_count.toLocaleString()}
-            />
+          {game.genres.length > 0 ? (
+            <View style={styles.detailCell}>
+              <Text style={styles.detailLabel}>Genre:</Text>
+              <Text style={styles.detailValue}>{game.genres.join(', ')}</Text>
+            </View>
           ) : null}
         </View>
       </View>
 
-      {/* Region */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Region</Text>
-        <View style={styles.tagRow}>
-          <View style={styles.regionTag}>
-            <Text style={styles.regionTagText}>{game.region}</Text>
-          </View>
+      {/* Summary */}
+      {game.summary ? (
+        <View style={styles.section}>
+          <Text style={styles.summary}>{game.summary}</Text>
         </View>
-      </View>
+      ) : null}
 
       {/* Market Value — Pro only */}
       {isPro && (game.price_loose || game.price_complete || game.price_new || game.price_box_only) ? (
@@ -346,6 +442,7 @@ export default function GameDetailScreen({route}: Props) {
         </View>
       ) : null}
     </ScrollView>
+    </View>
   );
 }
 
@@ -363,100 +460,181 @@ function DetailRow({label, value}: {label: string; value: string}) {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#0A0A0F'},
   content: {paddingBottom: 48},
+  customHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 10,
+  },
+  headerSpacer: {
+    flex: 1,
+  },
+  headerBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#334155',
+    backgroundColor: '#0f172a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerBtnWishlisted: {
+    borderColor: '#FF1B8D',
+    shadowColor: '#FF1B8D',
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 10,
+  },
   center: {
     flex: 1,
     backgroundColor: '#0A0A0F',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  hero: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 16,
-    alignItems: 'flex-start',
+  // Hero
+  heroCover: {
+    alignItems: 'center',
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   cover: {
-    width: 100,
-    height: 130,
-    borderRadius: 8,
+    width: 160,
+    height: 210,
+    borderRadius: 10,
     backgroundColor: '#1e293b',
   },
   coverPlaceholder: {alignItems: 'center', justifyContent: 'center'},
-  coverPlaceholderEmoji: {fontSize: 36},
-  heroInfo: {flex: 1, paddingTop: 4},
+  coverPlaceholderEmoji: {fontSize: 48},
   title: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#f1f5f9',
-    lineHeight: 26,
+    fontSize: 22,
+    fontWeight: '700',
+    fontStyle: 'italic',
+    fontFamily: Fonts.display,
+    color: '#ffffff',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    lineHeight: 28,
   },
-  consoleName: {
-    fontSize: 13,
-    color: '#6366f1',
-    fontWeight: '600',
-    marginTop: 6,
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: 10,
+  },
+  regionBadge: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 160, 255, 0.5)',
+    backgroundColor: '#0a1a35',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  regionBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  metaContainer: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 20,
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
-  },
-  metaText: {fontSize: 13, color: '#64748b'},
-  ratingBadge: {
-    backgroundColor: '#1e293b',
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  ratingText: {fontSize: 12, color: '#fbbf24', fontWeight: '700'},
-  // Collection section
-  collectionSection: {
-    marginHorizontal: 20,
-    marginBottom: 12,
-    backgroundColor: '#1e293b',
-    borderRadius: 14,
-    padding: 14,
-  },
-  copiesRow: {
-    flexDirection: 'row',
+    justifyContent: 'center',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12,
+    gap: 6,
   },
-  copyChip: {
+  metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    borderRadius: 8,
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 13,
+    color: '#94a3b8',
+  },
+  metaDot: {
+    fontSize: 13,
+    color: '#475569',
+  },
+  // Add button
+  addBtnWrapper: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  addCopyBtn: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  addCopyGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  addCopyBtnContent: {flexDirection: 'row', alignItems: 'center', gap: 6},
+  addCopyBtnText: {color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.5},
+  // Collection copies
+  copiesList: {
+    gap: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 160, 255, 0.5)',
+    padding: 12,
+    overflow: 'hidden',
+  },
+  copiesGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  copyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 4,
+  },
+  copyConditionBadge: {
+    borderRadius: 6,
     borderWidth: 1,
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: '#0A0A0F',
+    paddingVertical: 4,
   },
-  copyChipDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  copyChipLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  copyChipRemove: {
+  copyConditionText: {
     fontSize: 11,
-    color: '#475569',
-    marginLeft: 2,
+    fontWeight: '800',
   },
-  addRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  copyLabel: {
+    fontSize: 13,
+    color: '#94a3b8',
+  },
+  copyStars: {
+    fontSize: 14,
   },
   conditionPicker: {
-    flex: 1,
     flexDirection: 'row',
     gap: 6,
+    marginBottom: 16,
   },
   conditionChip: {
     flex: 1,
@@ -474,56 +652,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#64748b',
   },
-  addCopyBtn: {
-    backgroundColor: '#6366f1',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    minWidth: 72,
-  },
-  addCopyBtnText: {color: '#fff', fontSize: 13, fontWeight: '700'},
-  // Wishlist
-  wishlistRow: {
-    marginHorizontal: 20,
-    marginBottom: 24,
-  },
-  wishlistBtn: {
-    backgroundColor: '#1e293b',
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  wishlistBtnActive: {
-    backgroundColor: '#78350f',
-    borderColor: '#f59e0b',
-  },
-  btnText: {color: '#fff', fontSize: 14, fontWeight: '700'},
   // Sections
   section: {paddingHorizontal: 20, marginBottom: 24},
   sectionLabel: {
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    fontStyle: 'italic',
+    fontFamily: Fonts.display,
+    color: '#ffffff',
     marginBottom: 10,
   },
-  tagRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 8},
-  tag: {
-    backgroundColor: '#1e293b',
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  tagText: {color: '#94a3b8', fontSize: 13},
   summary: {fontSize: 14, color: '#94a3b8', lineHeight: 22},
   detailsCard: {
     backgroundColor: '#1e293b',
     borderRadius: 12,
     overflow: 'hidden',
+  },
+  detailsGrid: {
+    gap: 6,
+  },
+  detailCell: {
+    flexDirection: 'row',
+    gap: 8,
   },
   detailRow: {
     flexDirection: 'row',
@@ -539,8 +689,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#f1f5f9',
     fontWeight: '500',
-    maxWidth: '60%',
-    textAlign: 'right',
   },
   // Screenshots
   screenshotList: {paddingVertical: 4},
@@ -551,19 +699,64 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e293b',
   },
   errorText: {color: '#fca5a5', fontSize: 15},
-  regionTag: {
-    backgroundColor: '#1e293b',
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  regionTagText: {color: '#94a3b8', fontSize: 13, fontWeight: '600'},
   priceSource: {
     fontSize: 10,
     color: '#334155',
     marginTop: 6,
     textAlign: 'right',
+  },
+  starPicker: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  star: {
+    fontSize: 28,
+    color: '#334155',
+  },
+  starActive: {
+    color: '#fbbf24',
+  },
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#f1f5f9',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  modalConfirmBtn: {
+    backgroundColor: '#6366f1',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  modalConfirmText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

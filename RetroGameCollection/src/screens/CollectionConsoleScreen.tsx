@@ -14,6 +14,7 @@ import type {NativeStackNavigationProp, NativeStackScreenProps} from '@react-nav
 import {useMyCollection} from '../api/collection';
 import {igdbImageUrl, useGameStatsForConsoleRegion} from '../api/games';
 import ProgressBar from '../components/common/ProgressBar';
+import {ScreenHeader} from '../navigation/AppNavigator';
 import type {CollectionStackParamList} from '../navigation/AppNavigator';
 import type {CollectionEntryWithDetails} from '../api/collection';
 import type {UserCollection} from '../types/database';
@@ -127,6 +128,7 @@ export default function CollectionConsoleScreen() {
 
   return (
     <View style={styles.container}>
+      <ScreenHeader />
       <FlatList
         data={entries}
         keyExtractor={item => item.id}
@@ -164,6 +166,7 @@ export default function CollectionConsoleScreen() {
                 gameName: item.games.name,
                 consoleId: item.console_id,
                 consoleName,
+                collectionEntryId: item.id,
               })
             }
           />

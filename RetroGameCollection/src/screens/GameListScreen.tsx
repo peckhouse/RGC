@@ -20,6 +20,7 @@ import {useMyCollection} from '../api/collection';
 import ProgressBar from '../components/common/ProgressBar';
 import {GameCardsSkeleton} from '../components/common/Skeleton';
 import {CONSOLE_LOGO_MAP} from './ManufacturerScreen';
+import {ScreenHeader} from '../navigation/AppNavigator';
 import type {ConsolesStackParamList} from '../navigation/AppNavigator';
 import type {Game} from '../types/database';
 import AdBanner from '../components/common/AdBanner';
@@ -201,6 +202,7 @@ export default function GameListScreen({route}: Props) {
 
   return (
     <View style={styles.container}>
+      <ScreenHeader />
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>

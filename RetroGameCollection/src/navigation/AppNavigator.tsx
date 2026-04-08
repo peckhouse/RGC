@@ -3,8 +3,10 @@ import {View, Image, StyleSheet, Animated, Pressable} from 'react-native';
 import {NavigationContainer, StackActions, useNavigationContainerRef} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {Home, Gamepad2, Library, Star, User} from 'lucide-react-native';
+import {Home, Gamepad2, Library, Star, User, ChevronLeft} from 'lucide-react-native';
+import {useNavigation} from '@react-navigation/native';
 
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useAuth} from '../hooks/useAuth';
 import {Analytics} from '../lib/analytics';
 import {configurePurchases, logOutPurchases} from '../lib/purchases';
@@ -50,6 +52,7 @@ export type GameDetailParams = {
   gameName: string;
   consoleId: number;
   consoleName: string;
+  collectionEntryId?: string;
 };
 
 export type ConsolesStackParamList = {
@@ -143,12 +146,33 @@ function AccountTabIcon({color, focused}: TabIconProps) {
   return <User size={ICON_SIZE} color={color} />;
 }
 
+export function ScreenHeader({children}: {children?: React.ReactNode}) {
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const scale = useRef(new Animated.Value(1)).current;
+  return (
+    <View style={[styles.screenHeader, {paddingTop: insets.top}]}>
+      <Animated.View style={{transform: [{scale}]}}>
+        <Pressable
+          style={styles.headerBtn}
+          onPress={() => navigation.goBack()}
+          onPressIn={() =>
+            Animated.spring(scale, {toValue: 0.82, useNativeDriver: true, speed: 50, bounciness: 0}).start()
+          }
+          onPressOut={() =>
+            Animated.spring(scale, {toValue: 1, useNativeDriver: true, speed: 30, bounciness: 8}).start()
+          }>
+          <ChevronLeft size={22} color="#ffffff" />
+        </Pressable>
+      </Animated.View>
+      <View style={styles.headerSpacer} />
+      {children}
+    </View>
+  );
+}
+
 const darkHeader = {
-  headerShown: true,
-  title: '',
-  headerStyle: {backgroundColor: BG},
-  headerTintColor: '#6366f1',
-  headerShadowVisible: false,
+  headerShown: false,
   contentStyle: {backgroundColor: BG},
 } as const;
 
@@ -156,7 +180,7 @@ function HomeNavigator() {
   return (
     <HomeStack.Navigator screenOptions={darkHeader}>
       <HomeStack.Screen name="HomeScreen" component={HomeScreen} options={{headerShown: false}} />
-      <HomeStack.Screen name="GameDetail" component={GameDetailScreen} />
+      <HomeStack.Screen name="GameDetail" component={GameDetailScreen} options={{headerShown: false}} />
     </HomeStack.Navigator>
   );
 }
@@ -167,7 +191,7 @@ function ConsolesNavigator() {
       <ConsolesStack.Screen name="ConsoleList" component={ConsoleListScreen} options={{headerShown: false}} />
       <ConsolesStack.Screen name="Manufacturer" component={ManufacturerScreen} />
       <ConsolesStack.Screen name="GameList" component={GameListScreen} />
-      <ConsolesStack.Screen name="GameDetail" component={GameDetailScreen} />
+      <ConsolesStack.Screen name="GameDetail" component={GameDetailScreen} options={{headerShown: false}} />
     </ConsolesStack.Navigator>
   );
 }
@@ -177,7 +201,7 @@ function CollectionNavigator() {
     <CollectionStack.Navigator screenOptions={darkHeader}>
       <CollectionStack.Screen name="CollectionHome" component={CollectionScreen} options={{headerShown: false}} />
       <CollectionStack.Screen name="CollectionConsole" component={CollectionConsoleScreen} />
-      <CollectionStack.Screen name="GameDetail" component={GameDetailScreen} />
+      <CollectionStack.Screen name="GameDetail" component={GameDetailScreen} options={{headerShown: false}} />
     </CollectionStack.Navigator>
   );
 }
@@ -187,7 +211,7 @@ function WishlistNavigator() {
     <WishlistStack.Navigator screenOptions={darkHeader}>
       <WishlistStack.Screen name="WishlistHome" component={WishlistScreen} options={{headerShown: false}} />
       <WishlistStack.Screen name="WishlistConsole" component={WishlistConsoleScreen} />
-      <WishlistStack.Screen name="GameDetail" component={GameDetailScreen} />
+      <WishlistStack.Screen name="GameDetail" component={GameDetailScreen} options={{headerShown: false}} />
     </WishlistStack.Navigator>
   );
 }
@@ -334,5 +358,25 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#334155',
+    backgroundColor: '#0f172a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  screenHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 10,
+  },
+  headerSpacer: {
+    flex: 1,
   },
 });

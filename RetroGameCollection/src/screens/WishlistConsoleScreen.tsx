@@ -17,6 +17,7 @@ import {
   useMoveToCollection,
 } from '../api/wishlist';
 import {igdbImageUrl} from '../api/games';
+import {ScreenHeader} from '../navigation/AppNavigator';
 import type {WishlistStackParamList} from '../navigation/AppNavigator';
 import type {WishlistEntryWithDetails} from '../api/wishlist';
 
@@ -127,6 +128,7 @@ export default function WishlistConsoleScreen() {
 
   return (
     <View style={styles.container}>
+      <ScreenHeader />
       <FlatList
         data={entries}
         keyExtractor={item => item.id}

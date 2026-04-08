@@ -17,6 +17,7 @@ import {useConsoles} from '../api/consoles';
 import {igdbImageUrl} from '../api/games';
 import {MANUFACTURERS} from '../constants/manufacturers';
 import {getManufacturerKey} from '../utils/manufacturerUtils';
+import {ScreenHeader} from '../navigation/AppNavigator';
 import type {ConsolesStackParamList} from '../navigation/AppNavigator';
 import type {ManufacturerKey} from '../constants/manufacturers';
 import type {Console} from '../types/database';
@@ -187,6 +188,7 @@ export default function ManufacturerScreen() {
 
   return (
     <View style={styles.container}>
+      <ScreenHeader />
       <SectionList
         sections={sections}
         keyExtractor={item => String(item.id)}
