@@ -1,7 +1,6 @@
 ---
 layout: page
 title: Privacy Policy
-permalink: /privacy/
 ---
 
 **Effective date:** {{ site.effective_date }}

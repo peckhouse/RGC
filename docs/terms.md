@@ -1,7 +1,6 @@
 ---
 layout: page
 title: Terms of Service
-permalink: /terms/
 ---
 
 **Effective date:** {{ site.effective_date }}
