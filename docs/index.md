@@ -11,5 +11,5 @@ Found a bug? Got a feature request? Email us at **{{ site.support_email }}** —
 
 ## Legal
 
-- [Privacy Policy](./privacy.html)
-- [Terms of Service](./terms.html)
+- [Privacy Policy]({{ '/privacy/' | relative_url }})
+- [Terms of Service]({{ '/terms/' | relative_url }})
