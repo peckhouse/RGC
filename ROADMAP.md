@@ -97,7 +97,7 @@ Detailed status of each phase. See [CLAUDE.md](CLAUDE.md) for project overview, 
 - [ ] App Store metadata draft — see `STORE_METADATA.md` (description, keywords, privacy labels worksheet, screenshot shot list). Still TODO: capture screenshots, fill in Store Connect questionnaire, host privacy policy + ToS at a public URL.
 - [ ] Google Play listing — short/full description in `STORE_METADATA.md`; still TODO: feature graphic, phone screenshots, Data Safety form
 - [ ] TestFlight beta round
-- [ ] Privacy policy + Terms of Service URLs
+- [x] Privacy Policy + Terms of Service — drafted in `docs/` as Jekyll markdown (privacy.md, terms.md, index.md, _config.yml). Needs: push to `main`, enable GitHub Pages on `/docs` (Settings → Pages → branch: main, folder: /docs). URLs will be `peckhouse.github.io/RGC/privacy.html` and `terms.html`.
 - [ ] RevenueCat production keys (currently sandbox)
 - [ ] AdMob production ad unit IDs
 - [ ] PostHog production project
