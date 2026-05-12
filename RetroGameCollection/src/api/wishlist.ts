@@ -65,7 +65,7 @@ export function useAddToWishlist() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({queryKey: ['wishlist']});
-      Toast.show({type: 'success', text1: 'Added to wishlist', visibilityTime: 2500});
+      Toast.show({type: 'success', text1: 'Added to wishlist'});
       Analytics.wishlistGameAdded({
         gameId: variables.gameId,
         consoleId: variables.consoleId,
@@ -73,7 +73,7 @@ export function useAddToWishlist() {
       });
     },
     onError: () => {
-      Toast.show({type: 'error', text1: 'Something went wrong', text2: 'Could not add to wishlist', visibilityTime: 3000});
+      Toast.show({type: 'error', text1: 'Something went wrong', text2: 'Could not add to wishlist'});
     },
   });
 }
@@ -90,11 +90,11 @@ export function useRemoveFromWishlist() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey: ['wishlist']});
-      Toast.show({type: 'success', text1: 'Removed from wishlist', visibilityTime: 2500});
+      Toast.show({type: 'success', text1: 'Removed from wishlist'});
       Analytics.wishlistGameRemoved();
     },
     onError: () => {
-      Toast.show({type: 'error', text1: 'Something went wrong', text2: 'Could not remove from wishlist', visibilityTime: 3000});
+      Toast.show({type: 'error', text1: 'Something went wrong', text2: 'Could not remove from wishlist'});
     },
   });
 }
@@ -151,14 +151,14 @@ export function useMoveToCollection() {
       queryClient.invalidateQueries({queryKey: ['wishlist']});
       queryClient.invalidateQueries({queryKey: ['collection']});
       queryClient.invalidateQueries({queryKey: ['games', 'stats']});
-      Toast.show({type: 'success', text1: 'Moved to collection', text2: 'Removed from wishlist', visibilityTime: 3000});
+      Toast.show({type: 'success', text1: 'Moved to collection', text2: 'Removed from wishlist'});
       Analytics.wishlistMovedToCollection({
         gameId: variables.gameId,
         consoleId: variables.consoleId,
       });
     },
     onError: () => {
-      Toast.show({type: 'error', text1: 'Something went wrong', text2: 'Could not move to collection', visibilityTime: 3000});
+      Toast.show({type: 'error', text1: 'Something went wrong', text2: 'Could not move to collection'});
     },
   });
 }

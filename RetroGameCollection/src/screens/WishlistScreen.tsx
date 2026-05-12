@@ -1,128 +1,190 @@
-import React, {useMemo} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {
   View,
   Text,
   FlatList,
+  TextInput,
   TouchableOpacity,
+  Pressable,
   Image,
   RefreshControl,
   StyleSheet,
+  Animated,
 } from 'react-native';
-import {ConsoleListSkeleton} from '../components/common/Skeleton';
+import {GameListSkeleton} from '../components/common/Skeleton';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {ChevronRight, Search, Star} from 'lucide-react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import {useMyWishlist} from '../api/wishlist';
 import {igdbImageUrl} from '../api/games';
 import type {WishlistStackParamList, RootStackParamList} from '../navigation/AppNavigator';
 import type {WishlistEntryWithDetails} from '../api/wishlist';
+import type {UserWishlist} from '../types/database';
 import {useProStatus} from '../hooks/useProStatus';
 import ScreenLogo from '../components/common/ScreenLogo';
+import AdBanner from '../components/common/AdBanner';
+import {Fonts} from '../constants/fonts';
 
 type Nav = NativeStackNavigationProp<WishlistStackParamList & RootStackParamList>;
 
-type ConsoleGroup = {
-  consoleId: number;
-  consoleName: string;
-  entries: WishlistEntryWithDetails[];
-};
+type Priority = UserWishlist['priority'];
 
-const PRIORITY_COLOR: Record<string, string> = {
+const PRIORITY_LABELS: Record<Priority, string> = {
+  high: 'High',
+  medium: 'Medium',
+  low: 'Low',
+};
+const PRIORITY_COLORS: Record<Priority, string> = {
   high: '#ef4444',
   medium: '#f59e0b',
   low: '#64748b',
 };
+const PRIORITY_ORDER: Record<Priority, number> = {high: 0, medium: 1, low: 2};
 
-function ConsoleCard({group, onPress}: {group: ConsoleGroup; onPress: () => void}) {
-  const previews = group.entries.slice(0, 4);
-  const highCount = group.entries.filter(e => e.priority === 'high').length;
+function Separator() {
+  return <View style={styles.separator} />;
+}
+
+const GameRow = React.memo(function GameRow({
+  entry,
+  onPress,
+}: {
+  entry: WishlistEntryWithDetails;
+  onPress: () => void;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const cover = igdbImageUrl(entry.games.cover_url);
+  const priority = entry.priority;
+
+  function handlePressIn() {
+    Animated.parallel([
+      Animated.spring(scale, {toValue: 0.97, useNativeDriver: true, speed: 50, bounciness: 0}),
+      Animated.spring(translateX, {toValue: -8, useNativeDriver: true, speed: 50, bounciness: 0}),
+    ]).start();
+  }
+  function handlePressOut() {
+    Animated.parallel([
+      Animated.spring(scale, {toValue: 1, useNativeDriver: true, speed: 30, bounciness: 6}),
+      Animated.spring(translateX, {toValue: 0, useNativeDriver: true, speed: 30, bounciness: 6}),
+    ]).start();
+  }
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.75}>
-      <View style={styles.cardTop}>
-        <View style={styles.cardInfo}>
-          <Text style={styles.consoleName} numberOfLines={1}>
-            {group.consoleName}
-          </Text>
-          <View style={styles.cardMeta}>
-            <Text style={styles.gameCount}>
-              {group.entries.length} game{group.entries.length !== 1 ? 's' : ''} wanted
-            </Text>
-            {highCount > 0 && (
-              <View style={styles.highBadge}>
-                <Text style={styles.highBadgeText}>{highCount} high priority</Text>
-              </View>
-            )}
-          </View>
-        </View>
-        <Text style={styles.chevron}>›</Text>
-      </View>
-
-      <View style={styles.coverStrip}>
-        {previews.map(entry => {
-          const uri = igdbImageUrl(entry.games.cover_url);
-          return (
-            <View key={entry.id} style={styles.coverWrapper}>
-              {uri ? (
-                <Image source={{uri}} style={styles.coverThumb} resizeMode="cover" />
-              ) : (
-                <View style={[styles.coverThumb, styles.coverPlaceholder]}>
-                  <Text style={styles.coverPlaceholderText}>🎮</Text>
-                </View>
-              )}
-              <View
-                style={[
-                  styles.priorityDot,
-                  {backgroundColor: PRIORITY_COLOR[entry.priority]},
-                ]}
+    <Animated.View style={{transform: [{scale}, {translateX}]}}>
+      <TouchableOpacity
+        style={styles.row}
+        onPress={onPress}
+        activeOpacity={1}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}>
+        <LinearGradient
+          colors={['#0d2525', '#0a1a35', '#06091e']}
+          locations={[0, 0.60, 1]}
+          start={{x: 1, y: 1}}
+          end={{x: 0, y: 0}}
+          style={styles.rowGradient}
+        />
+        <View>
+          {cover ? (
+            <Image source={{uri: cover}} style={styles.cover} resizeMode="cover" />
+          ) : (
+            <View style={[styles.cover, styles.coverPlaceholder]}>
+              <Image
+                source={require('../../assets/rgc-logo.png')}
+                style={styles.coverPlaceholderLogo}
+                resizeMode="contain"
               />
             </View>
-          );
-        })}
-        {group.entries.length > 4 && (
-          <View style={[styles.coverThumb, styles.coverMore]}>
-            <Text style={styles.coverMoreText}>+{group.entries.length - 4}</Text>
+          )}
+        </View>
+        <View style={styles.info}>
+          <Text style={styles.gameName} numberOfLines={2}>
+            {entry.games.name}
+          </Text>
+          <View style={styles.metaRow}>
+            <View style={styles.regionBadge}>
+              <Text style={styles.regionText}>{entry.games.region}</Text>
+            </View>
+            <View style={styles.consoleBadge}>
+              <Text style={styles.consoleText} numberOfLines={1}>
+                {entry.consoles.name}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.priorityBadge,
+                {
+                  backgroundColor: PRIORITY_COLORS[priority] + '22',
+                  borderColor: PRIORITY_COLORS[priority],
+                },
+              ]}>
+              <Text style={[styles.priorityText, {color: PRIORITY_COLORS[priority]}]}>
+                {PRIORITY_LABELS[priority]}
+              </Text>
+            </View>
           </View>
-        )}
-      </View>
-    </TouchableOpacity>
+        </View>
+        <ChevronRight size={22} color="#ffffff" />
+      </TouchableOpacity>
+    </Animated.View>
   );
-}
+});
 
 export default function WishlistScreen() {
   const navigation = useNavigation<Nav>();
   const {isPro, isLoading: proLoading} = useProStatus();
   const {data: wishlist, isLoading, isRefetching, isError, refetch} = useMyWishlist();
+  const [search, setSearch] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
 
-  const groups = useMemo((): ConsoleGroup[] => {
+  const entries = useMemo(() => {
     if (!wishlist) return [];
-    const map = new Map<number, ConsoleGroup>();
-    for (const entry of wishlist) {
-      const cid = entry.console_id;
-      if (!map.has(cid)) {
-        map.set(cid, {consoleId: cid, consoleName: entry.consoles.name, entries: []});
-      }
-      map.get(cid)!.entries.push(entry);
-    }
-    return Array.from(map.values()).sort((a, b) =>
-      a.consoleName.localeCompare(b.consoleName),
-    );
-  }, [wishlist]);
+    const sorted = [...wishlist].sort((a, b) => {
+      const p = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+      if (p !== 0) return p;
+      return a.games.name.localeCompare(b.games.name);
+    });
+    const q = search.trim().toLowerCase();
+    if (!q) return sorted;
+    return sorted.filter(e => e.games.name.toLowerCase().includes(q));
+  }, [wishlist, search]);
 
   if (!proLoading && !isPro) {
     return (
       <View style={styles.container}>
+        <View style={styles.pageHeader}>
+          <ScreenLogo />
+          <Text style={styles.pageTitle}>Wishlist</Text>
+        </View>
         <View style={styles.gateState}>
-          <Text style={styles.gateEmoji}>⭐</Text>
-          <Text style={styles.gateTitle}>Wishlist is a Pro feature</Text>
-          <Text style={styles.gateSub}>
-            Track games you want, set priority, and move them to your collection in one tap.
-          </Text>
-          <TouchableOpacity
-            style={styles.gateBtn}
-            onPress={() => navigation.navigate('Paywall', {reason: 'wishlist'})}
-            activeOpacity={0.8}>
-            <Text style={styles.gateBtnText}>Upgrade to Pro →</Text>
-          </TouchableOpacity>
+          <View style={styles.gateCard}>
+            <LinearGradient
+              colors={['#0d2525', '#0a1a35', '#06091e']}
+              locations={[0, 0.60, 1]}
+              start={{x: 1, y: 1}}
+              end={{x: 0, y: 0}}
+              style={styles.gateCardGradient}
+            />
+            <Star size={52} color="#FF1B8D" style={styles.gateIcon} />
+            <Text style={styles.gateTitle}>Wishlist is a Pro feature</Text>
+            <Text style={styles.gateSub}>
+              Track games you want, set priority, and move them to your collection in one tap.
+            </Text>
+            <Pressable
+              style={({pressed}) => [styles.gateBtn, pressed && styles.gateBtnPressed]}
+              onPress={() => navigation.navigate('Paywall', {reason: 'wishlist'})}>
+              <LinearGradient
+                colors={['#FF1B8D', '#A855F7', '#5B45DC']}
+                locations={[0, 0.65, 1]}
+                start={{x: 0.3, y: 0}}
+                end={{x: 0.4, y: 1}}
+                style={styles.gateBtnGradient}
+              />
+              <Text style={styles.gateBtnText}>Upgrade to Pro →</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     );
@@ -131,7 +193,7 @@ export default function WishlistScreen() {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <ConsoleListSkeleton accentColor="#f59e0b" />
+        <GameListSkeleton />
       </View>
     );
   }
@@ -147,29 +209,31 @@ export default function WishlistScreen() {
     );
   }
 
-  if (groups.length === 0) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.pageHeader}>
-          <Text style={styles.title}>Wishlist</Text>
-          <Text style={styles.subtitle}>0 games wanted</Text>
-        </View>
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>⭐</Text>
-          <Text style={styles.emptyTitle}>Nothing on your list</Text>
-          <Text style={styles.emptySubtitle}>
-            Browse a game and tap "Add to Wishlist" to save it for later.
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
+      <View style={styles.pageHeader}>
+        <ScreenLogo />
+        <Text style={styles.pageTitle}>Wishlist</Text>
+      </View>
+      <View style={styles.searchWrapper}>
+        <View style={[styles.searchBar, searchFocused && styles.searchBarFocused]}>
+          <Search size={16} color={searchFocused ? '#6366f1' : '#94a3b8'} />
+          <TextInput
+            style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search games…"
+            placeholderTextColor="#475569"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+          />
+        </View>
+      </View>
       <FlatList
-        data={groups}
-        keyExtractor={g => String(g.consoleId)}
+        data={entries}
+        keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
@@ -179,25 +243,41 @@ export default function WishlistScreen() {
             colors={['#6366f1']}
           />
         }
-        ListHeaderComponent={
-          <View style={styles.pageHeader}>
-            <ScreenLogo />
-            <Text style={styles.title}>Wishlist</Text>
-          </View>
-        }
         renderItem={({item}) => (
-          <ConsoleCard
-            group={item}
+          <GameRow
+            entry={item}
             onPress={() =>
-              navigation.navigate('WishlistConsole', {
-                consoleId: item.consoleId,
-                consoleName: item.consoleName,
+              navigation.navigate('GameDetail', {
+                gameId: item.game_id,
+                gameName: item.games.name,
+                consoleId: item.console_id,
+                consoleName: item.consoles.name,
               })
             }
           />
         )}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ItemSeparatorComponent={Separator}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            {search.trim() ? (
+              <Text style={styles.emptyText}>No games match "{search.trim()}"</Text>
+            ) : (
+              <>
+                <Text style={styles.emptyEmoji}>⭐</Text>
+                <Text style={styles.emptyTitle}>Nothing on your list</Text>
+                <Text style={styles.emptySubtitle}>
+                  Browse a game and tap "Add to Wishlist" to save it for later.
+                </Text>
+              </>
+            )}
+          </View>
+        }
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={12}
+        windowSize={8}
+        initialNumToRender={20}
       />
+      <AdBanner />
     </View>
   );
 }
@@ -212,68 +292,136 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   pageHeader: {
-    paddingHorizontal: 0,
     paddingTop: 64,
-    paddingBottom: 16,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 0,
   },
-  title: {fontSize: 28, fontWeight: '800', color: '#f1f5f9'},
-  subtitle: {fontSize: 13, color: '#64748b', marginTop: 4},
-  listContent: {paddingHorizontal: 16, paddingBottom: 40},
-  card: {
+  pageTitle: {
+    fontSize: 21,
+    lineHeight: 40,
+    fontWeight: '700',
+    fontStyle: 'italic',
+    fontFamily: Fonts.display,
+    color: '#ffffff',
+  },
+  searchWrapper: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  searchBarFocused: {
+    borderColor: '#6366f1',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#f1f5f9',
+    padding: 0,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+  },
+  row: {
+    flexDirection: 'row',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 160, 255, 0.5)',
+    overflow: 'hidden',
+  },
+  rowGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  cover: {
+    width: 56,
+    height: 72,
+    borderRadius: 6,
     backgroundColor: '#1e293b',
-    borderRadius: 14,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#f59e0b',
   },
-  cardTop: {flexDirection: 'row', alignItems: 'center', marginBottom: 12},
-  cardInfo: {flex: 1},
-  consoleName: {fontSize: 17, fontWeight: '700', color: '#f1f5f9'},
-  cardMeta: {flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4},
-  gameCount: {fontSize: 12, color: '#f59e0b', fontWeight: '600'},
-  highBadge: {
-    backgroundColor: '#7f1d1d',
+  coverPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000000',
+  },
+  coverPlaceholderLogo: {
+    width: 32,
+    height: 32,
+  },
+  info: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  gameName: {
+    fontSize: 15,
+    fontFamily: Fonts.display,
+    fontStyle: 'italic',
+    fontWeight: '700',
+    color: '#ffffff',
+    lineHeight: 21,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    flexWrap: 'wrap',
+  },
+  regionBadge: {
     borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#334155',
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  highBadgeText: {fontSize: 10, color: '#fca5a5', fontWeight: '700'},
-  chevron: {fontSize: 22, color: '#334155'},
-  coverStrip: {flexDirection: 'row', gap: 8},
-  coverWrapper: {position: 'relative'},
-  coverThumb: {
-    width: 52,
-    height: 68,
-    borderRadius: 5,
-    backgroundColor: '#0A0A0F',
-  },
-  coverPlaceholder: {alignItems: 'center', justifyContent: 'center'},
-  coverPlaceholderText: {fontSize: 18},
-  coverMore: {alignItems: 'center', justifyContent: 'center'},
-  coverMoreText: {fontSize: 13, fontWeight: '700', color: '#64748b'},
-  priorityDot: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 8,
-    height: 8,
+  regionText: {fontSize: 10, fontWeight: '700', color: '#94a3b8'},
+  consoleBadge: {
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#0f172a',
+    borderColor: '#334155',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    maxWidth: 140,
   },
+  consoleText: {fontSize: 10, fontWeight: '700', color: '#94a3b8'},
+  priorityBadge: {
+    borderRadius: 4,
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  priorityText: {fontSize: 10, fontWeight: '800'},
   separator: {height: 12},
   emptyState: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 40,
-    marginTop: -60,
+    paddingTop: 48,
   },
   emptyEmoji: {fontSize: 52, marginBottom: 16},
   emptyTitle: {fontSize: 18, fontWeight: '700', color: '#f1f5f9', marginBottom: 8},
   emptySubtitle: {fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 21},
+  emptyText: {fontSize: 14, color: '#64748b', textAlign: 'center'},
   errorText: {color: '#fca5a5', fontSize: 15},
   retryBtn: {
     backgroundColor: '#6366f1',
@@ -286,16 +434,64 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 16,
   },
-  gateEmoji: {fontSize: 52, marginBottom: 16},
-  gateTitle: {fontSize: 18, fontWeight: '700', color: '#f1f5f9', marginBottom: 8, textAlign: 'center'},
-  gateSub: {fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 21, marginBottom: 24},
+  gateCard: {
+    width: '100%',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 160, 255, 0.5)',
+    overflow: 'hidden',
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    alignItems: 'center',
+  },
+  gateCardGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  gateIcon: {marginBottom: 16},
+  gateTitle: {
+    fontSize: 18,
+    fontFamily: Fonts.display,
+    fontStyle: 'italic',
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  gateSub: {
+    fontSize: 14,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 24,
+  },
   gateBtn: {
-    backgroundColor: '#6366f1',
-    paddingHorizontal: 28,
-    paddingVertical: 13,
+    width: '100%',
     borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
-  gateBtnText: {color: '#fff', fontWeight: '700', fontSize: 15},
+  gateBtnGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  gateBtnPressed: {
+    opacity: 0.85,
+  },
+  gateBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
 });

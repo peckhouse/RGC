@@ -39,7 +39,7 @@ function Bone({
   );
 }
 
-// ─── Game card skeleton (used in GameList, CollectionConsole, WishlistConsole) ─
+// ─── Game card skeleton (used in GameList, CollectionConsole, Wishlist) ─
 
 function GameCardItem({opacity}: {opacity: Animated.Value}) {
   return (

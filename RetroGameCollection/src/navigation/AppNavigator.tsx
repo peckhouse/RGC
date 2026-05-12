@@ -22,7 +22,6 @@ import GameDetailScreen from '../screens/GameDetailScreen';
 import CollectionScreen from '../screens/CollectionScreen';
 import CollectionConsoleScreen from '../screens/CollectionConsoleScreen';
 import WishlistScreen from '../screens/WishlistScreen';
-import WishlistConsoleScreen from '../screens/WishlistConsoleScreen';
 import AccountScreen from '../screens/AccountScreen';
 import LoginScreen from '../screens/LoginScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
@@ -70,7 +69,6 @@ export type CollectionStackParamList = {
 
 export type WishlistStackParamList = {
   WishlistHome: undefined;
-  WishlistConsole: {consoleId: number; consoleName: string};
   GameDetail: GameDetailParams;
 };
 
@@ -210,7 +208,6 @@ function WishlistNavigator() {
   return (
     <WishlistStack.Navigator screenOptions={darkHeader}>
       <WishlistStack.Screen name="WishlistHome" component={WishlistScreen} options={{headerShown: false}} />
-      <WishlistStack.Screen name="WishlistConsole" component={WishlistConsoleScreen} />
       <WishlistStack.Screen name="GameDetail" component={GameDetailScreen} options={{headerShown: false}} />
     </WishlistStack.Navigator>
   );

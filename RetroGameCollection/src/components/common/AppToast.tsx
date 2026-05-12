@@ -1,5 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Animated, Dimensions, Modal, StyleSheet, Text, View} from 'react-native';
+import {Animated, Dimensions, StyleSheet, Text, View} from 'react-native';
+import {CheckCircle2, XCircle, Info} from 'lucide-react-native';
+import LinearGradient from 'react-native-linear-gradient';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -10,7 +12,6 @@ interface ShowParams {
   visibilityTime?: number;
 }
 
-// Module-level ref — same imperative pattern as react-native-toast-message
 let _show: ((params: ShowParams) => void) | null = null;
 
 export const Toast = {
@@ -18,14 +19,24 @@ export const Toast = {
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-
-// Tab bar height (60) + desired gap above it (16)
 const BOTTOM_OFFSET = 76;
+
+const ACCENT: Record<ToastType, string> = {
+  success: '#22c55e',
+  error: '#ef4444',
+  info: '#3B82F6',
+};
+
+function ToastIcon({type, color}: {type: ToastType; color: string}) {
+  if (type === 'success') return <CheckCircle2 size={20} color={color} />;
+  if (type === 'error') return <XCircle size={20} color={color} />;
+  return <Info size={20} color={color} />;
+}
 
 export function AppToast() {
   const translateX = useRef(new Animated.Value(-SCREEN_WIDTH)).current;
   const [toast, setToast] = useState<ShowParams | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const slideOut = useCallback(() => {
     Animated.timing(translateX, {
@@ -37,7 +48,7 @@ export function AppToast() {
 
   useEffect(() => {
     _show = (params: ShowParams) => {
-      clearTimeout(timerRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current);
       translateX.setValue(-SCREEN_WIDTH);
       setToast(params);
       Animated.spring(translateX, {
@@ -46,48 +57,40 @@ export function AppToast() {
         friction: 10,
         tension: 80,
       }).start();
-      timerRef.current = setTimeout(slideOut, params.visibilityTime ?? 2500);
+      timerRef.current = setTimeout(slideOut, params.visibilityTime ?? 1500);
     };
     return () => {
       _show = null;
-      clearTimeout(timerRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [translateX, slideOut]);
 
-  if (!toast) {
-    return null;
-  }
+  if (!toast) return null;
 
-  const borderColor =
-    (toast.type ?? 'success') === 'success'
-      ? '#22c55e'
-      : (toast.type ?? 'success') === 'error'
-        ? '#ef4444'
-        : '#6366f1';
+  const type = toast.type ?? 'success';
+  const accent = ACCENT[type];
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType="none"
-      statusBarTranslucent
-      onRequestClose={() => {}}>
+    <View pointerEvents="box-none" style={[styles.container, {bottom: BOTTOM_OFFSET}]}>
       <Animated.View
         pointerEvents="none"
-        style={[
-          styles.container,
-          {bottom: BOTTOM_OFFSET, transform: [{translateX}]},
-        ]}>
-        <View style={[styles.toast, {borderLeftColor: borderColor}]}>
+        style={[styles.toastWrapper, {transform: [{translateX}]}]}>
+        <View style={[styles.toast, {borderColor: accent}]}>
+          <LinearGradient
+            colors={['#0d2525', '#0a1a35', '#06091e']}
+            locations={[0, 0.60, 1]}
+            start={{x: 1, y: 1}}
+            end={{x: 0, y: 0}}
+            style={styles.gradient}
+          />
+          <ToastIcon type={type} color={accent} />
           <View style={styles.content}>
             <Text style={styles.text1}>{toast.text1}</Text>
-            {toast.text2 ? (
-              <Text style={styles.text2}>{toast.text2}</Text>
-            ) : null}
+            {toast.text2 ? <Text style={styles.text2}>{toast.text2}</Text> : null}
           </View>
         </View>
       </Animated.View>
-    </Modal>
+    </View>
   );
 }
 
@@ -96,27 +99,39 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    alignItems: 'flex-start',
-    paddingLeft: '5%',
+    paddingHorizontal: 16,
     zIndex: 9999,
     elevation: 9999,
   },
+  toastWrapper: {
+    width: '100%',
+  },
   toast: {
-    backgroundColor: '#1e293b',
-    borderRadius: 10,
-    borderLeftWidth: 5,
-    width: '90%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  gradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   content: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    flex: 1,
     justifyContent: 'center',
   },
-  text1: {color: '#f1f5f9', fontSize: 14, fontWeight: '600'},
-  text2: {color: '#94a3b8', fontSize: 12, marginTop: 2},
+  text1: {color: '#ffffff', fontSize: 14, fontWeight: '700'},
+  text2: {color: '#cbd5e1', fontSize: 12, marginTop: 2},
 });

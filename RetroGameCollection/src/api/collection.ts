@@ -74,7 +74,7 @@ export function useAddToCollection() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({queryKey: ['collection']});
       queryClient.invalidateQueries({queryKey: ['games', 'stats']});
-      Toast.show({type: 'success', text1: 'Added to collection', visibilityTime: 2500});
+      Toast.show({type: 'success', text1: 'Added to collection'});
       Analytics.collectionGameAdded({
         gameId: variables.gameId,
         consoleId: variables.consoleId,
@@ -82,7 +82,7 @@ export function useAddToCollection() {
       });
     },
     onError: () => {
-      Toast.show({type: 'error', text1: 'Something went wrong', text2: 'Could not add to collection', visibilityTime: 3000});
+      Toast.show({type: 'error', text1: 'Something went wrong', text2: 'Could not add to collection'});
     },
   });
 }
@@ -100,11 +100,11 @@ export function useRemoveFromCollection() {
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey: ['collection']});
       queryClient.invalidateQueries({queryKey: ['games', 'stats']});
-      Toast.show({type: 'success', text1: 'Removed from collection', visibilityTime: 2500});
+      Toast.show({type: 'success', text1: 'Removed from collection'});
       Analytics.collectionGameRemoved();
     },
     onError: () => {
-      Toast.show({type: 'error', text1: 'Something went wrong', text2: 'Could not remove copy', visibilityTime: 3000});
+      Toast.show({type: 'error', text1: 'Something went wrong', text2: 'Could not remove copy'});
     },
   });
 }

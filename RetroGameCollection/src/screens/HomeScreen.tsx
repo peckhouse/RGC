@@ -1,4 +1,4 @@
-import React, {useMemo, useEffect, useRef} from 'react';
+import React, {useMemo, useRef} from 'react';
 import {
   View,
   Text,
@@ -8,23 +8,16 @@ import {
   RefreshControl,
   Image,
   Animated,
-  Dimensions,
 } from 'react-native';
 
-const {width: SCREEN_WIDTH} = Dimensions.get('window');
-const CARD_GAP = 8;
-const CARD_WIDTH = (SCREEN_WIDTH - 40 - CARD_GAP * 2) / 3;
-const CARD_HEIGHT = CARD_WIDTH * (4 / 3);
 import {useNavigation} from '@react-navigation/native';
 import type {CompositeNavigationProp} from '@react-navigation/native';
 import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {useAuth} from '../hooks/useAuth';
 import {useMyCollection} from '../api/collection';
-import {useProfile} from '../api/profile';
 import {useProStatus} from '../hooks/useProStatus';
-import {igdbImageUrl} from '../api/games';
-import {Gamepad2, Joystick, ChevronRight} from 'lucide-react-native';
+import {useFreeConsoleLimit} from '../hooks/useFreeConsoleLimit';
+import {Gamepad2, Joystick, ChevronRight, Library, Star} from 'lucide-react-native';
 import type {RootStackParamList, MainTabParamList, HomeStackParamList} from '../navigation/AppNavigator';
 import AdBanner from '../components/common/AdBanner';
 import {StatsCardSkeleton} from '../components/common/Skeleton';
@@ -40,50 +33,44 @@ type Nav = CompositeNavigationProp<
   >
 >;
 
-const FREE_CONSOLE_LIMIT = 5;
-
 function formatCents(cents: number): string {
   return '$' + (cents / 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 
-function RecentCard({entry, onPress}: {entry: any; onPress: () => void}) {
+function NavCard({icon, label, onPress}: {icon: React.ReactNode; label: string; onPress: () => void}) {
   const scale = useRef(new Animated.Value(1)).current;
-  const uri = igdbImageUrl(entry.games.cover_url);
-  const cond = entry.condition ?? 'loose';
-  const condColor = cond === 'complete' ? '#22c55e' : cond === 'inbox' ? '#3b82f6' : '#64748b';
-  const condLabel = cond === 'complete' ? 'CMP' : cond === 'inbox' ? 'INB' : 'LSE';
+  const translateX = useRef(new Animated.Value(0)).current;
 
   function handlePressIn() {
-    Animated.spring(scale, {toValue: 0.93, useNativeDriver: true, speed: 50, bounciness: 0}).start();
+    Animated.parallel([
+      Animated.spring(scale, {toValue: 0.97, useNativeDriver: true, speed: 50, bounciness: 0}),
+      Animated.spring(translateX, {toValue: -4, useNativeDriver: true, speed: 50, bounciness: 0}),
+    ]).start();
   }
   function handlePressOut() {
-    Animated.spring(scale, {toValue: 1, useNativeDriver: true, speed: 30, bounciness: 6}).start();
+    Animated.parallel([
+      Animated.spring(scale, {toValue: 1, useNativeDriver: true, speed: 30, bounciness: 6}),
+      Animated.spring(translateX, {toValue: 0, useNativeDriver: true, speed: 30, bounciness: 6}),
+    ]).start();
   }
 
   return (
-    <Animated.View style={[styles.recentCardShadow, {transform: [{scale}]}]}>
+    <Animated.View style={[styles.navCardShadow, {transform: [{scale}, {translateX}]}]}>
       <TouchableOpacity
-        style={styles.recentCard}
+        style={styles.navCard}
         activeOpacity={1}
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}>
-        {uri ? (
-          <Image source={{uri}} style={styles.recentCardImage} resizeMode="cover" />
-        ) : (
-          <View style={[styles.recentCardImage, styles.recentCardPlaceholder]}>
-            <Text style={styles.recentCardPlaceholderText}>🎮</Text>
-          </View>
-        )}
-        <View style={styles.recentCardOverlay} />
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.98)']}
-          locations={[0.3, 1]}
-          style={styles.recentCardBottomGradient}
+          colors={['#0d2525', '#0a1a35', '#06091e']}
+          locations={[0, 0.60, 1]}
+          start={{x: 1, y: 1}}
+          end={{x: 0, y: 0}}
+          style={styles.navCardGradient}
         />
-        <View style={[styles.condGlass, {borderColor: condColor}]}>
-          <Text style={[styles.condGlassText, {color: condColor}]}>{condLabel}</Text>
-        </View>
+        {icon}
+        <Text style={styles.navCardLabel}>{label}</Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -91,35 +78,15 @@ function RecentCard({entry, onPress}: {entry: any; onPress: () => void}) {
 
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
-  const {session} = useAuth();
   const {data: collection, isRefetching, refetch, isLoading: collectionLoading} = useMyCollection();
-  const {data: profile, isLoading: profileLoading} = useProfile();
   const {isPro, isLoading: proLoading} = useProStatus();
+  const freeConsoleLimit = useFreeConsoleLimit();
 
-  const email = session?.user?.email ?? '';
-  const greeting = profile?.username || (email ? email.split('@')[0] : 'Collector');
-
-  const greetingOpacity = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!profileLoading) {
-      Animated.timing(greetingOpacity, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [profileLoading, greetingOpacity]);
-
-const ownedCount = collection?.length ?? 0;
+  const ownedCount = collection?.length ?? 0;
 
   const consolesTracked = useMemo(() => {
     if (!collection) return 0;
     return new Set(collection.map(e => e.console_id)).size;
-  }, [collection]);
-
-  const recentGames = useMemo(() => {
-    if (!collection) return [];
-    return collection.slice(0, 6);
   }, [collection]);
 
   // Sum collection value from prices (price_loose / price_complete based on condition)
@@ -140,7 +107,7 @@ const ownedCount = collection?.length ?? 0;
     return hasAnyPrice ? sum : null;
   }, [collection]);
 
-  const atConsoleLimitWarning = !isPro && consolesTracked >= FREE_CONSOLE_LIMIT - 1;
+  const atConsoleLimitWarning = !isPro && consolesTracked >= freeConsoleLimit - 1;
 
 
   return (
@@ -164,7 +131,6 @@ const ownedCount = collection?.length ?? 0;
             style={styles.heroLogo}
             resizeMode="contain"
           />
-          <Animated.Text style={[styles.heroGreeting, {opacity: greetingOpacity}]}>Welcome back, {greeting}</Animated.Text>
         </View>
 
         {/* Stats card */}
@@ -230,7 +196,7 @@ const ownedCount = collection?.length ?? 0;
                     {isPro
                       ? <Text style={styles.statValue}>{consolesTracked > 0 ? String(consolesTracked) : '—'}</Text>
                       : <Text style={styles.statValue}>
-                          {consolesTracked} <Text style={styles.statValueSep}>/</Text> {FREE_CONSOLE_LIMIT}
+                          {consolesTracked} <Text style={styles.statValueSep}>/</Text> {freeConsoleLimit}
                         </Text>
                     }
                     <View style={styles.statIconSpacer} />
@@ -245,7 +211,7 @@ const ownedCount = collection?.length ?? 0;
                           end={{x: 1, y: 0}}
                           style={[
                             styles.progressBarFill,
-                            {width: `${Math.min((consolesTracked / FREE_CONSOLE_LIMIT) * 100, 100)}%`},
+                            {width: `${Math.min((consolesTracked / freeConsoleLimit) * 100, 100)}%`},
                           ]}
                         />
                       </View>
@@ -266,31 +232,19 @@ const ownedCount = collection?.length ?? 0;
         </View>
         </View>
 
-        {/* Recently added */}
-        {recentGames.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Recently Added</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Collection' as any)}>
-                <Text style={styles.viewAllLink}>View All</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.recentGrid}>
-              {recentGames.map(entry => (
-                <RecentCard
-                  key={entry.id}
-                  entry={entry}
-                  onPress={() => navigation.navigate('GameDetail', {
-                    gameId: entry.games.id,
-                    gameName: entry.games.name,
-                    consoleId: entry.console_id,
-                    consoleName: entry.consoles.name,
-                  })}
-                />
-              ))}
-            </View>
-          </View>
-        )}
+        {/* Quick nav */}
+        <View style={styles.navRow}>
+          <NavCard
+            icon={<Library size={28} color="rgba(99, 160, 255, 0.85)" />}
+            label="My Collection"
+            onPress={() => navigation.navigate('Collection' as any)}
+          />
+          <NavCard
+            icon={<Star size={28} color="#FF1B8D" />}
+            label="Wishlist"
+            onPress={() => navigation.navigate('Wishlist' as any)}
+          />
+        </View>
 
 
       </ScrollView>
@@ -495,91 +449,39 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#6366f1',
   },
-  // Recently added grid
-  recentGrid: {
+  // Quick nav row
+  navRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: CARD_GAP,
+    gap: 10,
+    marginBottom: 24,
   },
-  recentCardShadow: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    borderRadius: 10,
-    shadowColor: '#3B82F6',
-    shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 6,
-  },
-  recentCard: {
+  navCardShadow: {
     flex: 1,
-    borderRadius: 10,
+    borderRadius: 16,
+  },
+  navCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 160, 255, 0.5)',
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: '#A855F7',
-  },
-  recentCardImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  recentCardPlaceholder: {
-    backgroundColor: '#1e293b',
+    paddingVertical: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 10,
   },
-  recentCardPlaceholderText: {
-    fontSize: 28,
-  },
-  recentCardOverlay: {
+  navCardGradient: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.45)',
   },
-  recentCardBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 6,
-    paddingBottom: 7,
-  },
-  recentCardBottomGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-  },
-  recentCardConsole: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#fff',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    textShadowColor: 'rgba(0,0,0,0.9)',
-    textShadowOffset: {width: 0, height: 1},
-    textShadowRadius: 3,
-  },
-  condGlass: {
-    position: 'absolute',
-    bottom: 6,
-    left: 6,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1,
-    borderRadius: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 3,
-  },
-  condGlassText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.4,
+  navCardLabel: {
+    fontSize: 15,
+    fontFamily: Fonts.display,
+    fontStyle: 'italic',
+    fontWeight: '700',
+    color: '#ffffff',
   },
   // CTA cards
   ctaCard: {

@@ -31,6 +31,7 @@ import {
 } from '../api/wishlist';
 import type {GameDetailParams, RootStackParamList} from '../navigation/AppNavigator';
 import {useProStatus} from '../hooks/useProStatus';
+import {useFreeConsoleLimit} from '../hooks/useFreeConsoleLimit';
 import type {UserCollection} from '../types/database';
 
 type Props = NativeStackScreenProps<{GameDetail: GameDetailParams}, 'GameDetail'>;
@@ -89,6 +90,7 @@ export default function GameDetailScreen({route}: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const {isPro} = useProStatus();
+  const freeConsoleLimit = useFreeConsoleLimit();
 
   const [selectedCondition, setSelectedCondition] = useState<Condition>('loose');
   const [gameCondition, setGameCondition] = useState<1 | 2 | 3 | 4 | 5>(3);
@@ -135,16 +137,20 @@ export default function GameDetailScreen({route}: Props) {
   const handleToggleWishlist = useCallback(() => {
     if (isWishlisted && wishlistEntry) {
       removeFromWishlist.mutate(wishlistEntry.id);
-    } else {
-      addToWishlist.mutate({gameId, consoleId, priority: 'medium'});
+      return;
     }
-  }, [isWishlisted, wishlistEntry, removeFromWishlist, addToWishlist, gameId, consoleId]);
+    if (!isPro) {
+      navigation.navigate('Paywall', {reason: 'wishlist', plans: 'subscriptions-only'});
+      return;
+    }
+    addToWishlist.mutate({gameId, consoleId, priority: 'medium'});
+  }, [isWishlisted, wishlistEntry, removeFromWishlist, addToWishlist, gameId, consoleId, isPro, navigation]);
 
   const handleOpenAddModal = useCallback(() => setShowAddModal(true), []);
 
   function handleAddCopy() {
     const isNewConsole = !ownedConsoleIds.has(consoleId);
-    if (!isPro && isNewConsole && ownedConsoleIds.size >= 5) {
+    if (!isPro && isNewConsole && ownedConsoleIds.size >= freeConsoleLimit) {
       setShowAddModal(false);
       navigation.navigate('Paywall', {reason: 'console-limit'});
       return;
@@ -310,6 +316,13 @@ export default function GameDetailScreen({route}: Props) {
           activeOpacity={1}
           onPress={() => setShowAddModal(false)}>
           <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <LinearGradient
+              colors={['#0d2525', '#0a1a35', '#06091e']}
+              locations={[0, 0.60, 1]}
+              start={{x: 1, y: 1}}
+              end={{x: 0, y: 0}}
+              style={styles.modalGradient}
+            />
             <Text style={styles.modalTitle}>Add to Collection</Text>
             <Text style={styles.modalLabel}>Type</Text>
             <View style={styles.conditionPicker}>
@@ -318,8 +331,10 @@ export default function GameDetailScreen({route}: Props) {
                   key={c}
                   style={[
                     styles.conditionChip,
-                    selectedCondition === c && styles.conditionChipActive,
-                    selectedCondition === c && {borderColor: CONDITION_COLORS[c]},
+                    selectedCondition === c && {
+                      borderColor: CONDITION_COLORS[c],
+                      backgroundColor: CONDITION_COLORS[c] + '22',
+                    },
                   ]}
                   onPress={() => setSelectedCondition(c)}
                   activeOpacity={0.7}>
@@ -335,27 +350,44 @@ export default function GameDetailScreen({route}: Props) {
             </View>
             <Text style={styles.modalLabel}>Condition</Text>
             <View style={styles.starPicker}>
-              {([1, 2, 3, 4, 5] as const).map(star => (
-                <TouchableOpacity
-                  key={star}
-                  onPress={() => setGameCondition(star)}
-                  activeOpacity={0.7}
-                  hitSlop={{top: 6, bottom: 6, left: 4, right: 4}}>
-                  <Text style={[styles.star, star <= gameCondition && styles.starActive]}>★</Text>
-                </TouchableOpacity>
-              ))}
+              {([1, 2, 3, 4, 5] as const).map(star => {
+                const active = star <= gameCondition;
+                return (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => setGameCondition(star)}
+                    activeOpacity={0.7}
+                    hitSlop={{top: 6, bottom: 6, left: 4, right: 4}}>
+                    <Star
+                      size={28}
+                      color={active ? '#FF1B8D' : '#334155'}
+                      fill={active ? '#FF1B8D' : 'transparent'}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-            <TouchableOpacity
-              style={styles.modalConfirmBtn}
+            <Pressable
+              style={({pressed}) => [
+                styles.modalConfirmBtn,
+                isCollectionMutating && styles.modalConfirmBtnDisabled,
+                pressed && !isCollectionMutating && styles.modalConfirmBtnPressed,
+              ]}
               onPress={handleAddCopy}
-              disabled={isCollectionMutating}
-              activeOpacity={0.8}>
+              disabled={isCollectionMutating}>
+              <LinearGradient
+                colors={['#FF1B8D', '#A855F7', '#5B45DC']}
+                locations={[0, 0.65, 1]}
+                start={{x: 0.3, y: 0}}
+                end={{x: 0.4, y: 1}}
+                style={styles.modalConfirmGradient}
+              />
               {isCollectionMutating ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
                 <Text style={styles.modalConfirmText}>Add</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -633,24 +665,22 @@ const styles = StyleSheet.create({
   },
   conditionPicker: {
     flexDirection: 'row',
-    gap: 6,
-    marginBottom: 16,
+    gap: 8,
+    marginBottom: 18,
   },
   conditionChip: {
     flex: 1,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#334155',
-    paddingVertical: 8,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    paddingVertical: 10,
     alignItems: 'center',
   },
-  conditionChipActive: {
-    backgroundColor: '#0A0A0F',
-  },
   conditionChipText: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#64748b',
+    color: '#94a3b8',
   },
   // Sections
   section: {paddingHorizontal: 20, marginBottom: 24},
@@ -720,43 +750,70 @@ const styles = StyleSheet.create({
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   modalContent: {
-    backgroundColor: '#1e293b',
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 160, 255, 0.5)',
+    overflow: 'hidden',
     padding: 24,
     width: '100%',
     maxWidth: 340,
   },
+  modalGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#f1f5f9',
+    fontFamily: Fonts.display,
+    fontStyle: 'italic',
+    fontWeight: '700',
+    color: '#ffffff',
     marginBottom: 20,
     textAlign: 'center',
   },
   modalLabel: {
-    fontSize: 12,
+    fontSize: 15,
+    fontFamily: Fonts.display,
+    fontStyle: 'italic',
     fontWeight: '700',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    color: '#ffffff',
     marginBottom: 10,
   },
   modalConfirmBtn: {
-    backgroundColor: '#6366f1',
-    borderRadius: 12,
-    paddingVertical: 14,
+    width: '100%',
+    borderRadius: 10,
+    paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
     marginTop: 12,
   },
+  modalConfirmGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  modalConfirmBtnDisabled: {
+    opacity: 0.6,
+  },
+  modalConfirmBtnPressed: {
+    opacity: 0.85,
+  },
   modalConfirmText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
 });

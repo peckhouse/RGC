@@ -38,7 +38,7 @@ const RATE_LIMIT_MS = 2000; // 2s between calls → ~2.5 hrs for a full 4,444-ga
 // IDs match syncAllFromIGDB.ts PLATFORMS list.
 // Note: ID 35 covers both Sega Master System and Game Gear — verify Game Gear ID before release.
 const PLATFORM_ID_TO_EBAY: Record<number, string> = {
-  18: 'NES',  99: 'NES',                            // NES / Famicom
+  18: 'NES',  99: 'NES',                             // NES / Famicom
   19: 'SNES', 58: 'SNES',                            // SNES / Super Famicom
   4:  'Nintendo 64',
   21: 'GameCube',

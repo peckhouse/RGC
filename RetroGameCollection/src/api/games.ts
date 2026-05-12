@@ -131,6 +131,23 @@ export function useGameStatsForConsoleRegion(consoleId: number, region: RegionCo
   });
 }
 
+async function fetchGameCountForConsole(consoleId: number): Promise<number> {
+  const {count, error} = await supabase
+    .from('games')
+    .select('*', {count: 'exact', head: true})
+    .eq('platform_id', consoleId);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export function useGameCountForConsole(consoleId: number) {
+  return useQuery({
+    queryKey: ['games', 'count', 'console', consoleId],
+    queryFn: () => fetchGameCountForConsole(consoleId),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export type IGDBImageSize =
   | 't_thumb'        // 90×128
   | 't_cover_small'  // 90×128

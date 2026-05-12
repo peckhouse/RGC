@@ -151,12 +151,13 @@ const styles = StyleSheet.create({
   pageHeader: {
     paddingTop: 64,
     paddingBottom: 20,
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 0,
   },
   pageTitle: {
     fontSize: 21,
+    lineHeight: 40,
     fontWeight: '700',
     fontStyle: 'italic',
     fontFamily: Fonts.display,

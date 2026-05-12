@@ -12,16 +12,19 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import type {RouteProp} from '@react-navigation/native';
 import type {PurchasesPackage} from 'react-native-purchases';
 import {PURCHASES_ERROR_CODE} from 'react-native-purchases';
+import {Infinity as InfinityIcon, Star, Ban, X} from 'lucide-react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import {getOfferings, purchasePackage} from '../lib/purchases';
 import {useProStatus} from '../hooks/useProStatus';
 import {Toast} from '../components/common/AppToast';
 import {Analytics} from '../lib/analytics';
+import {Fonts} from '../constants/fonts';
 import type {RootStackParamList} from '../navigation/AppNavigator';
 
-const BENEFITS = [
-  {icon: '♾️', text: 'Unlimited consoles tracked'},
-  {icon: '⭐', text: 'Wishlist with priority levels'},
-  {icon: '🚫', text: 'No ads'},
+const BENEFITS: {icon: React.ReactNode; text: string}[] = [
+  {icon: <InfinityIcon size={20} color="rgba(99, 160, 255, 0.85)" />, text: 'Unlimited consoles tracked'},
+  {icon: <Star size={20} color="rgba(99, 160, 255, 0.85)" />, text: 'Wishlist with priority levels'},
+  {icon: <Ban size={20} color="rgba(99, 160, 255, 0.85)" />, text: 'No ads'},
 ];
 
 type OfferingPackages = {
@@ -29,6 +32,21 @@ type OfferingPackages = {
   annual: PurchasesPackage | null;
   lifetime: PurchasesPackage | null;
 };
+
+function GradientCard({children, highlight}: {children: React.ReactNode; highlight?: boolean}) {
+  return (
+    <View style={[styles.card, highlight && styles.cardHighlight]}>
+      <LinearGradient
+        colors={['#0d2525', '#0a1a35', '#06091e']}
+        locations={[0, 0.60, 1]}
+        start={{x: 1, y: 1}}
+        end={{x: 0, y: 0}}
+        style={styles.cardGradient}
+      />
+      {children}
+    </View>
+  );
+}
 
 export default function PaywallScreen() {
   const navigation = useNavigation();
@@ -73,18 +91,17 @@ export default function PaywallScreen() {
         Analytics.purchaseCompleted({plan: pkg.identifier});
         refresh();
         navigation.goBack();
-        Toast.show({type: 'success', text1: 'Welcome to RGC Pro!', visibilityTime: 3000});
+        Toast.show({type: 'success', text1: 'Welcome to RGC Pro!'});
       }
     } catch (e: any) {
-      if (e?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED) {
+      if (e?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
         Analytics.purchaseCancelled({plan: pkg.identifier});
-        Toast.show({type: 'info', text1: 'Purchase cancelled', visibilityTime: 2500});
+        Toast.show({type: 'info', text1: 'Purchase cancelled'});
       } else {
         Toast.show({
           type: 'error',
           text1: 'Purchase failed',
           text2: e?.message ?? 'Please try again',
-          visibilityTime: 3500,
         });
       }
     } finally {
@@ -96,105 +113,129 @@ export default function PaywallScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Close button */}
       <TouchableOpacity
         style={styles.closeBtn}
         onPress={() => navigation.goBack()}
         hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
-        <Text style={styles.closeBtnText}>✕</Text>
+        <X size={18} color="rgba(99, 160, 255, 0.85)" />
       </TouchableOpacity>
 
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <Text style={styles.headline}>Upgrade to RGC Pro</Text>
         <Text style={styles.subheadline}>
           The complete retro game collection toolkit
         </Text>
 
-        {/* Benefits */}
-        <View style={styles.benefitsCard}>
-          {BENEFITS.map(b => (
-            <View key={b.text} style={styles.benefitRow}>
-              <Text style={styles.benefitIcon}>{b.icon}</Text>
-              <Text style={styles.benefitText}>{b.text}</Text>
-            </View>
-          ))}
-        </View>
+        <GradientCard>
+          <View style={styles.benefitsInner}>
+            {BENEFITS.map(b => (
+              <View key={b.text} style={styles.benefitRow}>
+                <View style={styles.benefitIconWrap}>{b.icon}</View>
+                <Text style={styles.benefitText}>{b.text}</Text>
+              </View>
+            ))}
+          </View>
+        </GradientCard>
 
-        {/* Pricing */}
         {loadingOfferings ? (
           <ActivityIndicator color="#6366f1" style={styles.loader} />
         ) : !packages.monthly && !packages.annual && !packages.lifetime ? (
-          <View style={styles.unavailable}>
+          <GradientCard>
             <Text style={styles.unavailableText}>
               Plans unavailable right now. Please try again later.
             </Text>
-          </View>
+          </GradientCard>
         ) : (
           <View style={styles.pricingCards}>
             {packages.annual && (
-              <View style={[styles.pricingCard, styles.pricingCardHighlight]}>
+              <GradientCard highlight>
                 <View style={styles.bestValueBadge}>
+                  <LinearGradient
+                    colors={['#FF1B8D', '#A855F7', '#5B45DC']}
+                    locations={[0, 0.65, 1]}
+                    start={{x: 0.3, y: 0}}
+                    end={{x: 0.4, y: 1}}
+                    style={styles.bestValueGradient}
+                  />
                   <Text style={styles.bestValueText}>Best Value</Text>
                 </View>
                 <Text style={styles.pricingTitle}>Yearly</Text>
-                <Text style={styles.pricingPrice}>
-                  {packages.annual.product.localizedPriceString}
+                <Text style={styles.pricingPriceHighlight}>
+                  {packages.annual.product.priceString}
                 </Text>
                 <Text style={styles.pricingPer}>/ year</Text>
                 <Pressable
-                  style={({pressed}) => [styles.buyBtn, styles.buyBtnHighlight, pressed && !isBusy && {backgroundColor: '#818cf8'}]}
+                  style={({pressed}) => [
+                    styles.buyBtn,
+                    isBusy && styles.buyBtnDisabled,
+                    pressed && !isBusy && styles.buyBtnPressed,
+                  ]}
                   onPress={() => handlePurchase(packages.annual!)}
                   disabled={isBusy}>
+                  <LinearGradient
+                    colors={['#FF1B8D', '#A855F7', '#5B45DC']}
+                    locations={[0, 0.65, 1]}
+                    start={{x: 0.3, y: 0}}
+                    end={{x: 0.4, y: 1}}
+                    style={styles.buyBtnGradient}
+                  />
                   {purchasing === packages.annual.identifier ? (
                     <ActivityIndicator color="#fff" size="small" />
                   ) : (
                     <Text style={styles.buyBtnText}>Choose Plan</Text>
                   )}
                 </Pressable>
-              </View>
+              </GradientCard>
             )}
 
             {packages.monthly && (
-              <View style={styles.pricingCard}>
+              <GradientCard>
                 <Text style={styles.pricingTitle}>Monthly</Text>
                 <Text style={styles.pricingPrice}>
-                  {packages.monthly.product.localizedPriceString}
+                  {packages.monthly.product.priceString}
                 </Text>
                 <Text style={styles.pricingPer}>/ month</Text>
                 <Pressable
-                  style={({pressed}) => [styles.buyBtn, pressed && !isBusy && {backgroundColor: '#475569'}]}
+                  style={({pressed}) => [
+                    styles.buyBtnSecondary,
+                    isBusy && styles.buyBtnDisabled,
+                    pressed && !isBusy && styles.buyBtnPressed,
+                  ]}
                   onPress={() => handlePurchase(packages.monthly!)}
                   disabled={isBusy}>
                   {purchasing === packages.monthly.identifier ? (
                     <ActivityIndicator color="#fff" size="small" />
                   ) : (
-                    <Text style={styles.buyBtnText}>Choose Plan</Text>
+                    <Text style={styles.buyBtnSecondaryText}>Choose Plan</Text>
                   )}
                 </Pressable>
-              </View>
+              </GradientCard>
             )}
 
             {plans === 'all' && packages.lifetime && (
-              <View style={styles.pricingCard}>
+              <GradientCard>
                 <Text style={styles.pricingTitle}>Lifetime</Text>
                 <Text style={styles.pricingPrice}>
-                  {packages.lifetime.product.localizedPriceString}
+                  {packages.lifetime.product.priceString}
                 </Text>
                 <Text style={styles.pricingPer}>one-time</Text>
                 <Pressable
-                  style={({pressed}) => [styles.buyBtn, pressed && !isBusy && {backgroundColor: '#475569'}]}
+                  style={({pressed}) => [
+                    styles.buyBtnSecondary,
+                    isBusy && styles.buyBtnDisabled,
+                    pressed && !isBusy && styles.buyBtnPressed,
+                  ]}
                   onPress={() => handlePurchase(packages.lifetime!)}
                   disabled={isBusy}>
                   {purchasing === packages.lifetime.identifier ? (
                     <ActivityIndicator color="#fff" size="small" />
                   ) : (
-                    <Text style={styles.buyBtnText}>Choose Plan</Text>
+                    <Text style={styles.buyBtnSecondaryText}>Choose Plan</Text>
                   )}
                 </Pressable>
-              </View>
+              </GradientCard>
             )}
           </View>
         )}
@@ -210,26 +251,21 @@ export default function PaywallScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0A0A0F',
   },
   closeBtn: {
     position: 'absolute',
     top: 24,
     right: 20,
     zIndex: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#1e293b',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#475569',
+    borderColor: 'rgba(99, 160, 255, 0.5)',
+    backgroundColor: '#0f172a',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  closeBtnText: {
-    color: '#cbd5e1',
-    fontSize: 14,
-    fontWeight: '700',
   },
   content: {
     paddingHorizontal: 20,
@@ -237,23 +273,44 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   headline: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#f1f5f9',
+    fontSize: 26,
+    fontFamily: Fonts.display,
+    fontStyle: 'italic',
+    fontWeight: '700',
+    color: '#ffffff',
     textAlign: 'center',
     marginBottom: 8,
   },
   subheadline: {
-    fontSize: 15,
-    color: '#64748b',
+    fontSize: 14,
+    color: '#94a3b8',
     textAlign: 'center',
     marginBottom: 28,
   },
-  benefitsCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 24,
+
+  // Shared card
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 160, 255, 0.5)',
+    overflow: 'hidden',
+    padding: 18,
+    marginBottom: 12,
+    position: 'relative',
+  },
+  cardHighlight: {
+    borderColor: '#FF1B8D',
+  },
+  cardGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+
+  // Benefits
+  benefitsInner: {
     gap: 12,
   },
   benefitRow: {
@@ -261,56 +318,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  benefitIcon: {
-    fontSize: 20,
+  benefitIconWrap: {
     width: 28,
-    textAlign: 'center',
+    alignItems: 'center',
   },
   benefitText: {
     fontSize: 15,
     color: '#e2e8f0',
     fontWeight: '500',
+    flex: 1,
   },
+
+  // Loader + unavailable
   loader: {
     marginVertical: 32,
   },
-  unavailable: {
-    backgroundColor: '#1e293b',
-    borderRadius: 12,
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 24,
-  },
   unavailableText: {
-    color: '#64748b',
+    color: '#94a3b8',
     fontSize: 14,
     textAlign: 'center',
   },
+
+  // Pricing
   pricingCards: {
-    gap: 12,
+    marginTop: 12,
     marginBottom: 24,
-  },
-  pricingCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: 14,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: '#334155',
-    position: 'relative',
-  },
-  pricingCardHighlight: {
-    borderColor: '#6366f1',
-    backgroundColor: '#1e1f3b',
   },
   bestValueBadge: {
     position: 'absolute',
-    top: -1,
+    top: 0,
     right: 16,
-    backgroundColor: '#6366f1',
-    borderBottomLeftRadius: 6,
-    borderBottomRightRadius: 6,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    overflow: 'hidden',
     paddingHorizontal: 10,
     paddingVertical: 4,
+  },
+  bestValueGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   bestValueText: {
     color: '#fff',
@@ -321,37 +370,76 @@ const styles = StyleSheet.create({
   },
   pricingTitle: {
     fontSize: 17,
+    fontFamily: Fonts.display,
+    fontStyle: 'italic',
     fontWeight: '700',
-    color: '#f1f5f9',
+    color: '#ffffff',
     marginBottom: 4,
   },
   pricingPrice: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#6366f1',
+    color: '#ffffff',
+  },
+  pricingPriceHighlight: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#ffffff',
   },
   pricingPer: {
     fontSize: 13,
-    color: '#64748b',
+    color: '#94a3b8',
     marginBottom: 14,
   },
+
+  // Primary CTA
   buyBtn: {
-    backgroundColor: '#334155',
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
-  buyBtnHighlight: {
-    backgroundColor: '#6366f1',
+  buyBtnGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  buyBtnPressed: {
+    opacity: 0.85,
+  },
+  buyBtnDisabled: {
+    opacity: 0.6,
   },
   buyBtnText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
+
+  // Secondary CTA (Monthly / Lifetime)
+  buyBtnSecondary: {
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+    backgroundColor: '#0f172a',
+  },
+  buyBtnSecondaryText: {
+    color: '#cbd5e1',
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+
   legal: {
     fontSize: 11,
-    color: '#334155',
+    color: '#475569',
     textAlign: 'center',
     lineHeight: 17,
   },
