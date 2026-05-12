@@ -17,4 +17,10 @@ echo "→ Installing CocoaPods"
 cd ios
 pod install
 
+echo "→ Writing .xcode.env.local with NODE_BINARY path"
+# Xcode build phases (e.g. "Bundle React Native code and images") run in a
+# shell that doesn't have /opt/homebrew/bin in PATH, so `command -v node`
+# fails. .xcode.env.local is sourced by Xcode before each phase script.
+echo "export NODE_BINARY=$(command -v node)" > .xcode.env.local
+
 echo "✓ ci_post_clone done"
