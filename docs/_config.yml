@@ -1,0 +1,16 @@
+title: Retro Game Collection
+description: The collector's toolkit for physical retro game libraries.
+theme: minima
+show_excerpts: false
+
+minima:
+  skin: dark
+
+header_pages:
+  - privacy.md
+  - terms.md
+
+# Edit these before publishing.
+support_email: ludovic.anthony.prandi@gmail.com
+company_name: Retro Game Collection
+effective_date: 2026-05-12

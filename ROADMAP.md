@@ -53,7 +53,7 @@ Detailed status of each phase. See [CLAUDE.md](CLAUDE.md) for project overview, 
 
 ---
 
-## Phase 3.7 — UI/UX Redesign 🟡
+## Phase 3.7 — UI/UX Redesign ✅
 
 **Style:** dark gradient cards `#0d2525 → #0a1a35 → #06091e`, blue-glow border `rgba(99,160,255,0.5)`, borderRadius 16, lucide icons, press scale+translateX animation.
 
@@ -70,10 +70,9 @@ Detailed status of each phase. See [CLAUDE.md](CLAUDE.md) for project overview, 
 - [x] HomeScreen — "Welcome back" removed, stats cards themed, free-limit driven by hook; "Recently Added" replaced with two `NavCard`s (Library → Collection, Star → Wishlist) in the gradient-card pattern
 - [x] Page headers — all four (Console, Collection, Wishlist, Account) now inline logo + title, left-aligned, `lineHeight: 40` on title for vertical centering with logo
 - [x] Bottom tab bar — positioning + visual polish
-
-### Remaining
-- [ ] Modals — apply Phase 3.7 styling (gradient card, blue-glow border, brand-gradient primary buttons)
-- [ ] Toast — restyle `AppToast` to match the design (dark gradient bg, lucide icons, brand colors)
+- [x] Modals — Add-to-Collection + Paywall (Upgrade to RGC Pro): gradient card with blue-glow border, display-font title/labels, lucide icons (Star fill for active rating), brand-gradient primary CTA; Paywall fixed `priceString`/`PURCHASE_CANCELLED_ERROR` API drift
+- [x] Toast — restyled `AppToast` (gradient bg, lucide CheckCircle2/XCircle/Info icons, type-tinted border), replaced blocking `<Modal>` with `pointerEvents="box-none"` overlay so nav/buttons stay live; default visibility shortened to 1500ms, per-caller `visibilityTime` overrides stripped
+- [x] Wishlist gating bug fix — free users tapping the wishlist heart on GameDetail now hit the paywall (`reason: 'wishlist', plans: 'subscriptions-only'`) instead of silently writing a row they can't see
 
 ---
 
@@ -94,12 +93,13 @@ Detailed status of each phase. See [CLAUDE.md](CLAUDE.md) for project overview, 
 
 ## Phase 4 — Launch Readiness ⏳
 
-- [ ] App Store metadata: screenshots, description, keywords, privacy labels
-- [ ] Google Play listing
+- [x] **In-app account deletion** — required by App Store guideline 5.1.1(v) + Play policy. Danger-zone card on AccountScreen with red-bordered Delete button; modal requires typing `DELETE`; calls `public.delete_user_account()` RPC (SECURITY DEFINER, in `supabase/delete_account.sql`) which wipes `user_collections` / `user_wishlists` / `profiles` / `auth.users` in one transaction; client also best-effort removes the avatar from storage. **Needs: run `supabase/delete_account.sql` in Supabase SQL editor.**
+- [ ] App Store metadata draft — see `STORE_METADATA.md` (description, keywords, privacy labels worksheet, screenshot shot list). Still TODO: capture screenshots, fill in Store Connect questionnaire, host privacy policy + ToS at a public URL.
+- [ ] Google Play listing — short/full description in `STORE_METADATA.md`; still TODO: feature graphic, phone screenshots, Data Safety form
 - [ ] TestFlight beta round
 - [ ] Privacy policy + Terms of Service URLs
 - [ ] RevenueCat production keys (currently sandbox)
 - [ ] AdMob production ad unit IDs
 - [ ] PostHog production project
-- [ ] Migrate `react-native-vector-icons` v10 → per-family packages
+- [x] `react-native-vector-icons` dropped — package was only ever used for `Ionicons.loadFont()`, no JSX used it (all icons are lucide); removed from `App.tsx` + `package.json` (also `@types/react-native-vector-icons`). Requires `npm install` + `pod install` to take effect.
 - [ ] Test coverage (only default `App.test.tsx` exists today)

@@ -1,5 +1,5 @@
 import React, {useState, useRef, useEffect} from 'react';
-import {LogOut, Pencil, Camera, Check} from 'lucide-react-native';
+import {LogOut, Pencil, Camera, Check, Trash2} from 'lucide-react-native';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Pressable,
   Image,
   ActivityIndicator,
+  Modal,
   Share,
   ScrollView,
   StyleSheet,
@@ -22,6 +23,7 @@ import {
   useUpdateUsername,
   useUploadAvatar,
   useReferralCount,
+  deleteAccount,
 } from '../api/profile';
 import {useProStatus} from '../hooks/useProStatus';
 import {restorePurchases, getSubscriptionDetails} from '../lib/purchases';
@@ -77,6 +79,28 @@ export default function AccountScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [draftUsername, setDraftUsername] = useState('');
   const inputRef = useRef<TextInput>(null);
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmText.trim().toUpperCase() !== 'DELETE') return;
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      setShowDeleteModal(false);
+      await signOut();
+    } catch (e: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Could not delete account',
+        text2: e?.message ?? 'Please try again',
+      });
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   function startEditing() {
     setDraftUsername(profile?.username ?? '');
@@ -329,6 +353,81 @@ export default function AccountScreen() {
           )}
         </Pressable>
       </Card>
+
+      {/* ── Danger zone ── */}
+      <Text style={styles.sectionLabel}>Danger zone</Text>
+      <Card>
+        <Text style={styles.dangerSub}>
+          Permanently delete your account, your collection, and your wishlist. This cannot be undone.
+        </Text>
+        <Pressable
+          style={({pressed}) => [styles.deleteBtn, pressed && styles.deleteBtnPressed]}
+          onPress={() => {
+            setDeleteConfirmText('');
+            setShowDeleteModal(true);
+          }}>
+          <Trash2 size={16} color="#ef4444" />
+          <Text style={styles.deleteBtnText}>Delete Account</Text>
+        </Pressable>
+      </Card>
+
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => !deleting && setShowDeleteModal(false)}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => !deleting && setShowDeleteModal(false)}>
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <LinearGradient
+              colors={['#0d2525', '#0a1a35', '#06091e']}
+              locations={[0, 0.60, 1]}
+              start={{x: 1, y: 1}}
+              end={{x: 0, y: 0}}
+              style={styles.modalGradient}
+            />
+            <Text style={styles.modalTitle}>Delete account?</Text>
+            <Text style={styles.modalBody}>
+              This permanently deletes your collection, wishlist, profile, and login. We can't recover it.
+            </Text>
+            <Text style={styles.modalLabel}>Type DELETE to confirm</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={deleteConfirmText}
+              onChangeText={setDeleteConfirmText}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              editable={!deleting}
+              placeholder="DELETE"
+              placeholderTextColor="#475569"
+            />
+            <View style={styles.modalActions}>
+              <Pressable
+                style={({pressed}) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
+                onPress={() => setShowDeleteModal(false)}
+                disabled={deleting}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={({pressed}) => [
+                  styles.confirmDeleteBtn,
+                  (deleting || deleteConfirmText.trim().toUpperCase() !== 'DELETE') && styles.confirmDeleteBtnDisabled,
+                  pressed && !deleting && styles.confirmDeleteBtnPressed,
+                ]}
+                onPress={handleDeleteAccount}
+                disabled={deleting || deleteConfirmText.trim().toUpperCase() !== 'DELETE'}>
+                {deleting ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.confirmDeleteBtnText}>Delete</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 }
@@ -572,6 +671,115 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#94a3b8',
     marginBottom: 0,
+  },
+
+  // Danger zone
+  dangerSub: {
+    fontSize: 13,
+    color: '#94a3b8',
+    marginBottom: 14,
+    lineHeight: 19,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ef4444',
+    backgroundColor: 'rgba(239, 68, 68, 0.10)',
+    paddingVertical: 12,
+  },
+  deleteBtnPressed: {
+    opacity: 0.7,
+  },
+  deleteBtnText: {
+    color: '#ef4444',
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+
+  // Delete confirmation modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.55)',
+    overflow: 'hidden',
+    padding: 24,
+    width: '100%',
+    maxWidth: 360,
+  },
+  modalGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: Fonts.display,
+    fontStyle: 'italic',
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalBody: {
+    fontSize: 14,
+    color: '#cbd5e1',
+    lineHeight: 21,
+    marginBottom: 18,
+    textAlign: 'center',
+  },
+  modalLabel: {
+    fontSize: 13,
+    color: '#94a3b8',
+    marginBottom: 6,
+  },
+  modalInput: {
+    fontSize: 15,
+    color: '#f1f5f9',
+    backgroundColor: '#0f172a',
+    borderWidth: 1,
+    borderColor: '#ef4444',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 18,
+  },
+  confirmDeleteBtn: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ef4444',
+  },
+  confirmDeleteBtnDisabled: {
+    opacity: 0.4,
+  },
+  confirmDeleteBtnPressed: {
+    opacity: 0.85,
+  },
+  confirmDeleteBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
 
   signOutRow: {

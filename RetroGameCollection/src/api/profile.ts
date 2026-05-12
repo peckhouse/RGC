@@ -82,6 +82,24 @@ export function useUploadAvatar() {
   });
 }
 
+export async function deleteAccount(): Promise<void> {
+  const {
+    data: {user},
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Best-effort: drop the avatar object so we don't leave it orphaned.
+  // Failure here is non-fatal — the RPC still wipes the DB row + auth user.
+  try {
+    await supabase.storage.from('avatars').remove([`${user.id}/avatar.jpg`]);
+  } catch {
+    // ignore
+  }
+
+  const {error} = await supabase.rpc('delete_user_account');
+  if (error) throw error;
+}
+
 export async function linkReferralCode(userId: string, code: string): Promise<void> {
   const {error} = await supabase
     .from('profiles')
