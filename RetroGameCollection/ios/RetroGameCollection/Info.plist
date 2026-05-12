@@ -37,6 +37,10 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>RGC needs access to your photo library so you can choose an image for your profile avatar.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>RGC needs access to your camera so you can take a photo for your profile avatar.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
