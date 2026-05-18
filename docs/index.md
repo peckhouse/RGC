@@ -12,4 +12,5 @@ Found a bug? Got a feature request? Email us at **{{ site.support_email }}** —
 ## Legal
 
 - [Privacy Policy]({{ '/privacy.html' | relative_url }})
-- [Terms of Service]({{ '/terms.html' | relative_url }})
+- [Terms of Use (Apple Standard EULA)](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/)
+- [Disclaimers]({{ '/disclaimers.html' | relative_url }})

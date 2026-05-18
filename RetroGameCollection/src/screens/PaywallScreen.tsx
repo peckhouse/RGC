@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
+  Linking,
   StyleSheet,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -19,6 +20,7 @@ import {useProStatus} from '../hooks/useProStatus';
 import {Toast} from '../components/common/AppToast';
 import {Analytics} from '../lib/analytics';
 import {Fonts} from '../constants/fonts';
+import {PRIVACY_POLICY_URL, TERMS_URL} from '../constants/legal';
 import type {RootStackParamList} from '../navigation/AppNavigator';
 
 const BENEFITS: {icon: React.ReactNode; text: string}[] = [
@@ -243,6 +245,28 @@ export default function PaywallScreen() {
         <Text style={styles.legal}>
           {'Subscriptions auto-renew unless cancelled.\nManage or cancel anytime in your device\'s subscription settings.'}
         </Text>
+
+        <View style={styles.legalLinksRow}>
+          <Pressable
+            onPress={() => Linking.openURL(TERMS_URL)}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+            {({pressed}) => (
+              <Text style={[styles.legalLink, pressed && styles.legalLinkPressed]}>
+                Terms of Use (EULA)
+              </Text>
+            )}
+          </Pressable>
+          <Text style={styles.legalDot}>·</Text>
+          <Pressable
+            onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+            {({pressed}) => (
+              <Text style={[styles.legalLink, pressed && styles.legalLinkPressed]}>
+                Privacy Policy
+              </Text>
+            )}
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );
@@ -442,5 +466,24 @@ const styles = StyleSheet.create({
     color: '#475569',
     textAlign: 'center',
     lineHeight: 17,
+  },
+  legalLinksRow: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  legalLink: {
+    fontSize: 12,
+    color: '#3B82F6',
+    textDecorationLine: 'underline',
+  },
+  legalLinkPressed: {
+    opacity: 0.7,
+  },
+  legalDot: {
+    fontSize: 12,
+    color: '#475569',
   },
 });

@@ -15,6 +15,7 @@ import type {CompositeNavigationProp} from '@react-navigation/native';
 import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useMyCollection} from '../api/collection';
+import {usePullRefresh} from '../hooks/usePullRefresh';
 import {useProStatus} from '../hooks/useProStatus';
 import {useFreeConsoleLimit} from '../hooks/useFreeConsoleLimit';
 import {Gamepad2, Joystick, ChevronRight, Library, Star} from 'lucide-react-native';
@@ -78,11 +79,15 @@ function NavCard({icon, label, onPress}: {icon: React.ReactNode; label: string; 
 
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
-  const {data: collection, isRefetching, refetch, isLoading: collectionLoading} = useMyCollection();
+  const {data: collection, refetch, isLoading: collectionLoading} = useMyCollection();
+  const {refreshing, onRefresh} = usePullRefresh(refetch);
   const {isPro, isLoading: proLoading} = useProStatus();
   const freeConsoleLimit = useFreeConsoleLimit();
 
-  const ownedCount = collection?.length ?? 0;
+  const ownedCount = useMemo(
+    () => (collection ? new Set(collection.map(e => e.games.igdb_id)).size : 0),
+    [collection],
+  );
 
   const consolesTracked = useMemo(() => {
     if (!collection) return 0;
@@ -117,8 +122,8 @@ export default function HomeScreen() {
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
             tintColor="#6366f1"
             colors={['#6366f1']}
           />

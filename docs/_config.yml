@@ -2,13 +2,15 @@ title: Retro Game Collection
 description: The collector's toolkit for physical retro game libraries.
 theme: minima
 show_excerpts: false
+baseurl: "/RGC"
+url: "https://peckhouse.github.io"
 
 minima:
   skin: dark
 
 header_pages:
   - privacy.md
-  - terms.md
+  - disclaimers.md
 
 # Edit these before publishing.
 support_email: ludovic.anthony.prandi@gmail.com

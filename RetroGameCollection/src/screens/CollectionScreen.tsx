@@ -14,6 +14,7 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {ChevronRight, Package} from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {useMyCollection} from '../api/collection';
+import {usePullRefresh} from '../hooks/usePullRefresh';
 import {ConsoleListSkeleton} from '../components/common/Skeleton';
 import type {CollectionStackParamList} from '../navigation/AppNavigator';
 import type {CollectionEntryWithDetails} from '../api/collection';
@@ -48,7 +49,7 @@ function ConsoleCard({group, onPress}: {group: ConsoleGroup; onPress: () => void
     ]).start();
   }
 
-  const count = group.entries.length;
+  const count = new Set(group.entries.map(e => e.games.igdb_id)).size;
 
   return (
     <Animated.View style={[styles.cardShadow, {transform: [{scale}, {translateX}]}]}>
@@ -79,7 +80,8 @@ function ConsoleCard({group, onPress}: {group: ConsoleGroup; onPress: () => void
 
 export default function CollectionScreen() {
   const navigation = useNavigation<Nav>();
-  const {data: collection, isLoading, isError, refetch, isRefetching} = useMyCollection();
+  const {data: collection, isLoading, isError, refetch} = useMyCollection();
+  const {refreshing, onRefresh} = usePullRefresh(refetch);
 
   const groups = useMemo((): ConsoleGroup[] => {
     if (!collection) return [];
@@ -154,8 +156,8 @@ export default function CollectionScreen() {
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
             tintColor="#6366f1"
             colors={['#6366f1']}
           />

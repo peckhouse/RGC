@@ -109,14 +109,14 @@ async function fetchGameStatsForConsoleRegion(
 
     if (regionGameIds && regionGameIds.length > 0) {
       const ids = regionGameIds.map((g: any) => g.id as number);
-      const {count: ownedCount, error: ownedErr} = await supabase
+      const {data: ownedRows, error: ownedErr} = await supabase
         .from('user_collections')
-        .select('*', {count: 'exact', head: true})
+        .select('game_id')
         .eq('user_id', user.id)
         .eq('console_id', consoleId)
         .in('game_id', ids);
       if (ownedErr) throw ownedErr;
-      owned = ownedCount ?? 0;
+      owned = new Set((ownedRows ?? []).map((r: any) => r.game_id as number)).size;
     }
   }
 

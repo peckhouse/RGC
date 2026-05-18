@@ -1,11 +1,13 @@
 import Purchases, {LOG_LEVEL} from 'react-native-purchases';
-import type {PurchasesPackage} from 'react-native-purchases';
+import type {PurchasesPackage, CustomerInfo} from 'react-native-purchases';
 import {Platform} from 'react-native';
 import {RC_API_KEY_IOS, RC_API_KEY_ANDROID} from '../config';
 
 export const PRO_ENTITLEMENT = 'RGC Pro';
 
 let _configured = false;
+const _customerInfoListeners = new Set<(info: CustomerInfo) => void>();
+let _listenerInstalled = false;
 
 export function configurePurchases(userId: string) {
   const apiKey = Platform.OS === 'ios' ? RC_API_KEY_IOS : RC_API_KEY_ANDROID;
@@ -14,6 +16,19 @@ export function configurePurchases(userId: string) {
   if (__DEV__) {
     Purchases.setLogLevel(LOG_LEVEL.DEBUG);
   }
+  if (!_listenerInstalled) {
+    Purchases.addCustomerInfoUpdateListener(info => {
+      _customerInfoListeners.forEach(fn => fn(info));
+    });
+    _listenerInstalled = true;
+  }
+}
+
+export function onCustomerInfoUpdate(fn: (info: CustomerInfo) => void) {
+  _customerInfoListeners.add(fn);
+  return () => {
+    _customerInfoListeners.delete(fn);
+  };
 }
 
 export function logOutPurchases() {

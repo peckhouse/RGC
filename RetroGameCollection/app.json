@@ -1,4 +1,8 @@
 {
   "name": "RetroGameCollection",
-  "displayName": "RetroGameCollection"
+  "displayName": "RetroGameCollection",
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-3149480876131838~3719709265",
+    "ios_app_id": "ca-app-pub-3149480876131838~9708530983"
+  }
 }

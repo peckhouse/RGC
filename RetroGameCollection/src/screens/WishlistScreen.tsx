@@ -22,6 +22,7 @@ import type {WishlistStackParamList, RootStackParamList} from '../navigation/App
 import type {WishlistEntryWithDetails} from '../api/wishlist';
 import type {UserWishlist} from '../types/database';
 import {useProStatus} from '../hooks/useProStatus';
+import {usePullRefresh} from '../hooks/usePullRefresh';
 import ScreenLogo from '../components/common/ScreenLogo';
 import AdBanner from '../components/common/AdBanner';
 import {Fonts} from '../constants/fonts';
@@ -135,7 +136,8 @@ const GameRow = React.memo(function GameRow({
 export default function WishlistScreen() {
   const navigation = useNavigation<Nav>();
   const {isPro, isLoading: proLoading} = useProStatus();
-  const {data: wishlist, isLoading, isRefetching, isError, refetch} = useMyWishlist();
+  const {data: wishlist, isLoading, isError, refetch} = useMyWishlist();
+  const {refreshing, onRefresh} = usePullRefresh(refetch);
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -237,8 +239,8 @@ export default function WishlistScreen() {
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
             tintColor="#6366f1"
             colors={['#6366f1']}
           />

@@ -11,6 +11,7 @@ import {
   Modal,
   Share,
   ScrollView,
+  Linking,
   StyleSheet,
 } from 'react-native';
 import {launchImageLibrary} from 'react-native-image-picker';
@@ -32,6 +33,7 @@ import {Toast} from '../components/common/AppToast';
 import ScreenLogo from '../components/common/ScreenLogo';
 import GradientText from '../components/common/GradientText';
 import {Fonts} from '../constants/fonts';
+import {PRIVACY_POLICY_URL, TERMS_URL} from '../constants/legal';
 import type {RootStackParamList} from '../navigation/AppNavigator';
 
 function Card({children}: {children: React.ReactNode}) {
@@ -350,6 +352,30 @@ export default function AccountScreen() {
               <LogOut size={18} color={pressed ? '#f87171' : '#ef4444'} style={{marginRight: 8}} />
               <Text style={[styles.signOutText, {color: pressed ? '#f87171' : '#ef4444'}]}>Sign Out</Text>
             </>
+          )}
+        </Pressable>
+      </Card>
+
+      {/* ── Legal ── */}
+      <Text style={styles.sectionLabel}>Legal</Text>
+      <Card>
+        <Pressable
+          style={styles.legalRow}
+          onPress={() => Linking.openURL(TERMS_URL)}>
+          {({pressed}) => (
+            <Text style={[styles.legalRowText, pressed && styles.linkUnderline]}>
+              Terms of Use (EULA)
+            </Text>
+          )}
+        </Pressable>
+        <View style={styles.legalDivider} />
+        <Pressable
+          style={styles.legalRow}
+          onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
+          {({pressed}) => (
+            <Text style={[styles.legalRowText, pressed && styles.linkUnderline]}>
+              Privacy Policy
+            </Text>
           )}
         </Pressable>
       </Card>
@@ -791,5 +817,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#ef4444',
+  },
+
+  legalRow: {
+    paddingVertical: 10,
+  },
+  legalRowText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  legalDivider: {
+    height: 1,
+    backgroundColor: 'rgba(99, 160, 255, 0.15)',
+    marginVertical: 2,
   },
 });
