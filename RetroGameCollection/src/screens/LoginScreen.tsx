@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
@@ -495,28 +496,35 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'height' : undefined}>
-      <View style={styles.header}>
-        <Image
-          source={require('../../assets/rgc-logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        <Text style={styles.subtitle}>Your entire collection,{'\n'}Everywhere you go.</Text>
-      </View>
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.contentWrapper}>
+          <View style={styles.header}>
+            <Image
+              source={require('../../assets/rgc-logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.subtitle}>Your entire collection,{'\n'}Everywhere you go.</Text>
+          </View>
 
-      <Animated.View style={[styles.cardContainer, {opacity, transform: [{translateX}, {translateY}, {scale}]}]}>
-        {mode === 'signIn' ? (
-          <SignInCard
-            onSwitch={() => switchMode('signUp')}
-            onForgotPassword={() => switchMode('forgotPassword')}
-          />
-        ) : mode === 'signUp' ? (
-          <SignUpCard onSwitch={() => switchMode('signIn')} />
-        ) : (
-          <ForgotPasswordCard onBack={() => switchMode('signIn')} />
-        )}
-      </Animated.View>
+          <Animated.View style={[styles.cardContainer, {opacity, transform: [{translateX}, {translateY}, {scale}]}]}>
+            {mode === 'signIn' ? (
+              <SignInCard
+                onSwitch={() => switchMode('signUp')}
+                onForgotPassword={() => switchMode('forgotPassword')}
+              />
+            ) : mode === 'signUp' ? (
+              <SignUpCard onSwitch={() => switchMode('signIn')} />
+            ) : (
+              <ForgotPasswordCard onBack={() => switchMode('signIn')} />
+            )}
+          </Animated.View>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -528,9 +536,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0A0A0F',
   },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  contentWrapper: {
+    width: '100%',
+  },
   header: {
     alignItems: 'center',
-    paddingTop: 100,
     paddingHorizontal: 24,
     paddingBottom: 48,
   },

@@ -190,7 +190,7 @@ export default function GameDetailScreen({route}: Props) {
   return (
     <View style={styles.container}>
       {/* Custom header */}
-      <View style={[styles.customHeader, {paddingTop: insets.top}]}>
+      <View style={[styles.customHeader, {paddingTop: insets.top + 40}]}>
         <AnimatedHeaderBtn
           style={styles.headerBtn}
           onPress={() => navigation.goBack()}>

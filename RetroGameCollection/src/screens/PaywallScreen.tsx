@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import type {RouteProp} from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import type {PurchasesPackage} from 'react-native-purchases';
 import {PURCHASES_ERROR_CODE} from 'react-native-purchases';
 import {Infinity as InfinityIcon, Star, Ban, X} from 'lucide-react-native';
@@ -53,6 +54,7 @@ function GradientCard({children, highlight}: {children: React.ReactNode; highlig
 export default function PaywallScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, 'Paywall'>>();
+  const insets = useSafeAreaInsets();
   const plans = route.params?.plans ?? 'all';
   const {refresh} = useProStatus();
   const [packages, setPackages] = useState<OfferingPackages>({
@@ -116,14 +118,14 @@ export default function PaywallScreen() {
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={styles.closeBtn}
+        style={[styles.closeBtn, {top: insets.top + 40}]}
         onPress={() => navigation.goBack()}
         hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
         <X size={18} color="rgba(99, 160, 255, 0.85)" />
       </TouchableOpacity>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, {paddingTop: insets.top + 92}]}
         showsVerticalScrollIndicator={false}>
         <Text style={styles.headline}>Upgrade to RGC Pro</Text>
         <Text style={styles.subheadline}>
@@ -163,11 +165,11 @@ export default function PaywallScreen() {
                   />
                   <Text style={styles.bestValueText}>Best Value</Text>
                 </View>
-                <Text style={styles.pricingTitle}>Yearly</Text>
+                <Text style={styles.pricingTitle}>RGC Pro — Yearly</Text>
                 <Text style={styles.pricingPriceHighlight}>
                   {packages.annual.product.priceString}
                 </Text>
-                <Text style={styles.pricingPer}>/ year</Text>
+                <Text style={styles.pricingPer}>1 year · auto-renews</Text>
                 <Pressable
                   style={({pressed}) => [
                     styles.buyBtn,
@@ -194,11 +196,11 @@ export default function PaywallScreen() {
 
             {packages.monthly && (
               <GradientCard>
-                <Text style={styles.pricingTitle}>Monthly</Text>
+                <Text style={styles.pricingTitle}>RGC Pro — Monthly</Text>
                 <Text style={styles.pricingPrice}>
                   {packages.monthly.product.priceString}
                 </Text>
-                <Text style={styles.pricingPer}>/ month</Text>
+                <Text style={styles.pricingPer}>1 month · auto-renews</Text>
                 <Pressable
                   style={({pressed}) => [
                     styles.buyBtnSecondary,
@@ -218,11 +220,11 @@ export default function PaywallScreen() {
 
             {plans === 'all' && packages.lifetime && (
               <GradientCard>
-                <Text style={styles.pricingTitle}>Lifetime</Text>
+                <Text style={styles.pricingTitle}>RGC Pro — Lifetime</Text>
                 <Text style={styles.pricingPrice}>
                   {packages.lifetime.product.priceString}
                 </Text>
-                <Text style={styles.pricingPer}>one-time</Text>
+                <Text style={styles.pricingPer}>One-time purchase</Text>
                 <Pressable
                   style={({pressed}) => [
                     styles.buyBtnSecondary,

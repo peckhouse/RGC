@@ -149,7 +149,7 @@ export function ScreenHeader({children}: {children?: React.ReactNode}) {
   const insets = useSafeAreaInsets();
   const scale = useRef(new Animated.Value(1)).current;
   return (
-    <View style={[styles.screenHeader, {paddingTop: insets.top}]}>
+    <View style={[styles.screenHeader, {paddingTop: insets.top + 40}]}>
       <Animated.View style={{transform: [{scale}]}}>
         <Pressable
           style={styles.headerBtn}
@@ -228,6 +228,7 @@ function MainTabs() {
       screenOptions={{
         tabBarActiveTintColor: '#6366f1',
         tabBarInactiveTintColor: '#9ca3af',
+        tabBarLabelPosition: 'below-icon',
         tabBarStyle: {
           backgroundColor: '#0a1a35',
           borderTopWidth: 1,

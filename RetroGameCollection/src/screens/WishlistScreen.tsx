@@ -264,13 +264,20 @@ export default function WishlistScreen() {
             {search.trim() ? (
               <Text style={styles.emptyText}>No games match "{search.trim()}"</Text>
             ) : (
-              <>
-                <Text style={styles.emptyEmoji}>⭐</Text>
+              <View style={styles.emptyCard}>
+                <LinearGradient
+                  colors={['#0d2525', '#0a1a35', '#06091e']}
+                  locations={[0, 0.60, 1]}
+                  start={{x: 1, y: 1}}
+                  end={{x: 0, y: 0}}
+                  style={styles.emptyCardGradient}
+                />
+                <Star size={52} color="#FF1B8D" style={styles.emptyIcon} />
                 <Text style={styles.emptyTitle}>Nothing on your list</Text>
                 <Text style={styles.emptySubtitle}>
                   Browse a game and tap "Add to Wishlist" to save it for later.
                 </Text>
-              </>
+              </View>
             )}
           </View>
         }
@@ -415,14 +422,45 @@ const styles = StyleSheet.create({
   priorityText: {fontSize: 10, fontWeight: '800'},
   separator: {height: 12},
   emptyState: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 16,
     paddingTop: 48,
   },
-  emptyEmoji: {fontSize: 52, marginBottom: 16},
-  emptyTitle: {fontSize: 18, fontWeight: '700', color: '#f1f5f9', marginBottom: 8},
-  emptySubtitle: {fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 21},
+  emptyCard: {
+    width: '100%',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 160, 255, 0.5)',
+    overflow: 'hidden',
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    alignItems: 'center',
+  },
+  emptyCardGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  emptyIcon: {marginBottom: 16},
+  emptyTitle: {
+    fontSize: 18,
+    fontFamily: Fonts.display,
+    fontStyle: 'italic',
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 21,
+  },
   emptyText: {fontSize: 14, color: '#64748b', textAlign: 'center'},
   errorText: {color: '#fca5a5', fontSize: 15},
   retryBtn: {

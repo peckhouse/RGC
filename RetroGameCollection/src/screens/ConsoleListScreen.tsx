@@ -7,7 +7,7 @@ import {
   Image,
   StyleSheet,
   Animated,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -29,10 +29,8 @@ type ManufacturerCardData = {
   count: number;
 };
 
-const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const GRID_PADDING = 16;
 const GRID_GAP = 10;
-const CARD_SIZE = (SCREEN_WIDTH - GRID_PADDING * 2 - GRID_GAP) / 2;
 
 // Static require map — Metro needs literal paths
 const LOGO_MAP: Record<ManufacturerKey, ReturnType<typeof require>> = {
@@ -46,7 +44,7 @@ const LOGO_MAP: Record<ManufacturerKey, ReturnType<typeof require>> = {
   Bandai:   require('../../assets/manufacturer-logos/bandai-white.png'),
 };
 
-function MfCard({item, onPress}: {item: ManufacturerCardData; onPress: () => void}) {
+function MfCard({item, size, onPress}: {item: ManufacturerCardData; size: number; onPress: () => void}) {
   const scale = useRef(new Animated.Value(1)).current;
 
   function handlePressIn() {
@@ -57,7 +55,7 @@ function MfCard({item, onPress}: {item: ManufacturerCardData; onPress: () => voi
   }
 
   return (
-    <Animated.View style={[styles.cardShadow, {transform: [{scale}]}]}>
+    <Animated.View style={[styles.cardShadow, {width: size, height: size, transform: [{scale}]}]}>
       <TouchableOpacity
         style={styles.card}
         activeOpacity={1}
@@ -84,6 +82,8 @@ function MfCard({item, onPress}: {item: ManufacturerCardData; onPress: () => voi
 export default function ConsoleListScreen() {
   const navigation = useNavigation<Nav>();
   const {data: consoles, isError, refetch} = useConsoles();
+  const {width: screenWidth} = useWindowDimensions();
+  const cardSize = (screenWidth - GRID_PADDING * 2 - GRID_GAP) / 2;
 
   const cards = useMemo((): ManufacturerCardData[] => {
     if (!consoles) return MANUFACTURER_ORDER.map(key => ({key, count: 0}));
@@ -125,6 +125,7 @@ export default function ConsoleListScreen() {
         renderItem={({item}) => (
           <MfCard
             item={item}
+            size={cardSize}
             onPress={() => navigation.navigate('Manufacturer', {manufacturerKey: item.key})}
           />
         )}
@@ -168,8 +169,6 @@ const styles = StyleSheet.create({
     marginBottom: GRID_GAP,
   },
   cardShadow: {
-    width: CARD_SIZE,
-    height: CARD_SIZE,
     borderRadius: 16,
   },
   card: {
@@ -190,8 +189,8 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   logo: {
-    width: CARD_SIZE - 40,
-    height: CARD_SIZE - 40,
+    width: '70%',
+    height: '70%',
   },
   errorText: {
     color: '#fca5a5',
