@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,12 @@ import type {PurchasesPackage} from 'react-native-purchases';
 import {PURCHASES_ERROR_CODE} from 'react-native-purchases';
 import {Infinity as InfinityIcon, Star, Ban, X} from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {getOfferings, purchasePackage} from '../lib/purchases';
+import {
+  getOfferings,
+  purchasePackage,
+  restorePurchases,
+  verifyProStatus,
+} from '../lib/purchases';
 import {useProStatus} from '../hooks/useProStatus';
 import {Toast} from '../components/common/AppToast';
 import {Analytics} from '../lib/analytics';
@@ -56,7 +61,7 @@ export default function PaywallScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'Paywall'>>();
   const insets = useSafeAreaInsets();
   const plans = route.params?.plans ?? 'all';
-  const {refresh} = useProStatus();
+  const {isPro, refresh, setPro} = useProStatus();
   const [packages, setPackages] = useState<OfferingPackages>({
     monthly: null,
     annual: null,
@@ -64,6 +69,8 @@ export default function PaywallScreen() {
   });
   const [loadingOfferings, setLoadingOfferings] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
+  const dismissedRef = useRef(false);
 
   useEffect(() => {
     Analytics.paywallViewed({reason: route.params?.reason ?? 'unknown'});
@@ -87,21 +94,77 @@ export default function PaywallScreen() {
     });
   }, []);
 
+  const dismissAsPro = useCallback(
+    (text1: string) => {
+      if (dismissedRef.current) return;
+      dismissedRef.current = true;
+      setPro(true);
+      refresh();
+      navigation.goBack();
+      Toast.show({type: 'success', text1});
+    },
+    [navigation, refresh, setPro],
+  );
+
+  // Pro can land after `purchasePackage` has already resolved — a transaction
+  // finished by StoreKit outside this call, a deferred (Ask to Buy) purchase
+  // being approved, or the entitlement propagating a moment late. Closing the
+  // paywall off the entitlement itself means a paid customer is never left
+  // looking at the plans again.
+  useEffect(() => {
+    if (isPro) {
+      dismissAsPro('Welcome to RGC Pro!');
+    }
+  }, [isPro, dismissAsPro]);
+
   async function handlePurchase(pkg: PurchasesPackage) {
     setPurchasing(pkg.identifier);
     try {
-      const isPro = await purchasePackage(pkg);
-      if (isPro) {
+      const purchasedPro = (await purchasePackage(pkg)) || (await verifyProStatus());
+      if (purchasedPro) {
         Analytics.purchaseCompleted({plan: pkg.identifier});
-        refresh();
-        navigation.goBack();
-        Toast.show({type: 'success', text1: 'Welcome to RGC Pro!'});
+        dismissAsPro('Welcome to RGC Pro!');
+      } else {
+        // Paid, but no entitlement came back even after a cache-bypassing
+        // re-check. Offer the restore path instead of a dead button.
+        Analytics.purchaseFailed({plan: pkg.identifier, code: 'no-entitlement'});
+        Toast.show({
+          type: 'error',
+          text1: 'Purchase not applied yet',
+          text2: 'Tap Restore Purchases in a moment to finish unlocking Pro',
+        });
       }
     } catch (e: any) {
-      if (e?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+      const code: string | undefined = e?.code;
+      if (code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
         Analytics.purchaseCancelled({plan: pkg.identifier});
         Toast.show({type: 'info', text1: 'Purchase cancelled'});
+      } else if (
+        code === PURCHASES_ERROR_CODE.PRODUCT_ALREADY_PURCHASED_ERROR ||
+        code === PURCHASES_ERROR_CODE.RECEIPT_ALREADY_IN_USE_ERROR
+      ) {
+        // The store already owns this product for the signed-in Apple ID
+        // (common when re-testing a build). Recover silently via restore.
+        const restored = await restorePurchases().catch(() => false);
+        if (restored) {
+          Analytics.purchaseRestored({source: 'already-purchased'});
+          dismissAsPro('Pro restored — welcome back!');
+        } else {
+          Analytics.purchaseFailed({plan: pkg.identifier, code});
+          Toast.show({
+            type: 'error',
+            text1: 'Already purchased',
+            text2: 'This plan is active on another account. Sign in with the Apple ID that bought it.',
+          });
+        }
+      } else if (code === PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR) {
+        Toast.show({
+          type: 'info',
+          text1: 'Purchase pending',
+          text2: 'Pro unlocks as soon as the payment is approved',
+        });
       } else {
+        Analytics.purchaseFailed({plan: pkg.identifier, code, message: e?.message});
         Toast.show({
           type: 'error',
           text1: 'Purchase failed',
@@ -113,7 +176,28 @@ export default function PaywallScreen() {
     }
   }
 
-  const isBusy = purchasing !== null;
+  async function handleRestore() {
+    setRestoring(true);
+    try {
+      const restored = await restorePurchases();
+      if (restored) {
+        Analytics.purchaseRestored({source: 'paywall'});
+        dismissAsPro('Pro restored — welcome back!');
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Nothing to restore',
+          text2: 'No active Pro purchase found for this Apple ID',
+        });
+      }
+    } catch {
+      Toast.show({type: 'error', text1: 'Restore failed', text2: 'Please try again'});
+    } finally {
+      setRestoring(false);
+    }
+  }
+
+  const isBusy = purchasing !== null || restoring;
 
   return (
     <View style={styles.container}>
@@ -243,6 +327,22 @@ export default function PaywallScreen() {
             )}
           </View>
         )}
+
+        <Pressable
+          onPress={handleRestore}
+          disabled={isBusy}
+          style={({pressed}) => [
+            styles.restoreBtn,
+            isBusy && styles.buyBtnDisabled,
+            pressed && !isBusy && styles.buyBtnPressed,
+          ]}
+          hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+          {restoring ? (
+            <ActivityIndicator color="#94a3b8" size="small" />
+          ) : (
+            <Text style={styles.restoreBtnText}>Restore Purchases</Text>
+          )}
+        </Pressable>
 
         <Text style={styles.legal}>
           {'Subscriptions auto-renew unless cancelled.\nManage or cancel anytime in your device\'s subscription settings.'}
@@ -461,6 +561,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     letterSpacing: 0.5,
+  },
+
+  restoreBtn: {
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  restoreBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#94a3b8',
+    textDecorationLine: 'underline',
   },
 
   legal: {

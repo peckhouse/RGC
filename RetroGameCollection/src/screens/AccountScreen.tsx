@@ -28,6 +28,7 @@ import {
 } from '../api/profile';
 import {useProStatus} from '../hooks/useProStatus';
 import {restorePurchases, getSubscriptionDetails} from '../lib/purchases';
+import {Analytics} from '../lib/analytics';
 import type {SubscriptionDetails} from '../lib/purchases';
 import {Toast} from '../components/common/AppToast';
 import ScreenLogo from '../components/common/ScreenLogo';
@@ -65,7 +66,7 @@ export default function AccountScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {data: profile, isLoading: profileLoading} = useProfile();
   const {data: referralCount} = useReferralCount();
-  const {isPro, refresh: refreshProStatus} = useProStatus();
+  const {isPro, refresh: refreshProStatus, setPro} = useProStatus();
   const [subDetails, setSubDetails] = useState<SubscriptionDetails | null>(null);
 
   useEffect(() => {
@@ -140,7 +141,9 @@ export default function AccountScreen() {
     try {
       const isNowPro = await restorePurchases();
       if (isNowPro) {
+        setPro(true);
         refreshProStatus();
+        Analytics.purchaseRestored({source: 'account'});
         Toast.show({type: 'success', text1: 'Purchases restored!'});
       } else {
         Toast.show({type: 'error', text1: 'Nothing to restore', text2: 'No active Pro subscription found'});

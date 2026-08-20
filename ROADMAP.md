@@ -40,7 +40,7 @@ Detailed status of each phase. See [CLAUDE.md](CLAUDE.md) for project overview, 
 
 ---
 
-## Phase 3.5 — Monetization & Analytics 🟡
+## Phase 3.5 — Monetization & Analytics ✅
 
 - [x] **PostHog** — `posthog-react-native@4.36.1` + `src/lib/analytics.ts` (events fired)
 - [x] **AdMob** — `react-native-google-mobile-ads@16.0.3` + `AdBanner.tsx`
@@ -49,7 +49,7 @@ Detailed status of each phase. See [CLAUDE.md](CLAUDE.md) for project overview, 
 - [x] `subscription_tier` + `subscription_expires_at` in `types/database.ts`
 - [x] Free console limit via `useFreeConsoleLimit()` hook — 5 base, **6** when in a referral relationship (`profile.referred_by` set OR `useReferralCount() > 0`); enforced in HomeScreen + GameDetailScreen
 - [x] Referral flow — code linked on sign-up via `linkReferralCode`, `get_referral_count` RPC, AccountScreen "Refer a friend" card with shareable code + Share API
-- [ ] End-to-end verification — sandbox purchase, AdMob test ads, PostHog dashboard
+- [x] End-to-end verification — sandbox purchase, AdMob test ads, PostHog dashboard events all confirmed working
 
 ---
 
@@ -91,15 +91,24 @@ Detailed status of each phase. See [CLAUDE.md](CLAUDE.md) for project overview, 
 
 ---
 
-## Phase 4 — Launch Readiness ⏳
+## Phase 4 — Launch Readiness 🟡
 
+### In review
+- [x] **App Store (iOS) submitted for review** — Xcode Cloud workflow set to Archive + TestFlight Internal distribution; build attached to version 1.0; all App Information / App Privacy / App Review fields filled in; TestFlight install on personal device verified
+- [x] **Google Play (Android) submitted for review** — release on Production track with v1.0 / versionCode 4 `.aab`; all App Content questionnaires complete (Data Safety, Content Rating, Target Audience, Ads, App Access, Financial Features); main store listing populated
+
+### Done
 - [x] **In-app account deletion** — required by App Store guideline 5.1.1(v) + Play policy. Danger-zone card on AccountScreen with red-bordered Delete button; modal requires typing `DELETE`; calls `public.delete_user_account()` RPC (SECURITY DEFINER, in `supabase/delete_account.sql`) which wipes `user_collections` / `user_wishlists` / `profiles` / `auth.users` in one transaction; client also best-effort removes the avatar from storage. **Needs: run `supabase/delete_account.sql` in Supabase SQL editor.**
-- [ ] App Store metadata draft — see `STORE_METADATA.md` (description, keywords, privacy labels worksheet, screenshot shot list). Still TODO: capture screenshots, fill in Store Connect questionnaire, host privacy policy + ToS at a public URL.
-- [ ] Google Play listing — short/full description in `STORE_METADATA.md`; still TODO: feature graphic, phone screenshots, Data Safety form
-- [ ] TestFlight beta round
-- [x] Privacy Policy + Terms of Service — drafted in `docs/` as Jekyll markdown (privacy.md, terms.md, index.md, _config.yml). Needs: push to `main`, enable GitHub Pages on `/docs` (Settings → Pages → branch: main, folder: /docs). URLs will be `peckhouse.github.io/RGC/privacy.html` and `terms.html`.
-- [ ] RevenueCat production keys (currently sandbox)
-- [ ] AdMob production ad unit IDs
-- [ ] PostHog production project
-- [x] `react-native-vector-icons` dropped — package was only ever used for `Ionicons.loadFont()`, no JSX used it (all icons are lucide); removed from `App.tsx` + `package.json` (also `@types/react-native-vector-icons`). Requires `npm install` + `pod install` to take effect.
-- [ ] Test coverage (only default `App.test.tsx` exists today)
+- [x] **Privacy Policy + Terms of Service** — drafted in `docs/` as Jekyll markdown (privacy.md, terms.md, index.md, _config.yml). Live at `peckhouse.github.io/RGC/privacy.html` and `terms.html`
+- [x] **Store metadata** — `STORE_METADATA.md` with ready-to-paste text for both stores (description, keywords, privacy/data-safety worksheet, submission checklist)
+- [x] **Xcode Cloud CI** — `RetroGameCollection/ios/ci_scripts/ci_post_clone.sh` runs before each build: installs node + cocoapods via brew, generates `src/config.ts` from secret env vars (8 keys: Supabase URL/anon, PostHog key/host, RevenueCat iOS/Android, AdMob iOS/Android), runs `npm install` + `pod install`, writes `.xcode.env.local` with `NODE_BINARY` so the RN bundle phase finds node
+- [x] **iOS Info.plist hardening** — `ITSAppUsesNonExemptEncryption=false` (export compliance exempt — HTTPS only), `NSPhotoLibraryUsageDescription` + `NSCameraUsageDescription` (required by `react-native-image-picker` static analysis for avatar upload)
+- [x] **Android signing + AdMob declaration** — `retrogamecollection.keystore` + `gradle.properties` configured; `app.json` declares `react-native-google-mobile-ads.android_app_id` / `ios_app_id` to silence build warning; advertising-ID Play declaration set to Yes / Advertising
+- [x] **iPad support dropped** — Supported Destinations narrowed to iPhone-only for v1 to skip 152×152 / 167×167 iPad icon validation; can re-add in a 1.x release
+- [x] **`react-native-vector-icons` dropped** — package was only ever used for `Ionicons.loadFont()`, no JSX used it (all icons are lucide); removed from `App.tsx` + `package.json` (also `@types/react-native-vector-icons`)
+- [x] **Repo hardened for public visibility** — security audit confirmed: all real keys live in gitignored `src/config.ts` / `.env` / `gradle.properties`; AdMob App IDs in native manifests are public-by-design; GitHub Actions uses `${{ secrets.* }}`. Safe to flip the repo public.
+
+### Remaining
+- [ ] Review verdict from Apple (24h–7d) and Google (1–7d); fix any rejection feedback
+- [ ] **RevenueCat / AdMob / PostHog production keys** — confirm `src/config.ts` (and Xcode Cloud secrets) hold production-tier keys, not sandbox / test ad unit IDs
+- [ ] **Test coverage** — only default `App.test.tsx` today; add Jest + React Native Testing Library scaffolding once review is settled

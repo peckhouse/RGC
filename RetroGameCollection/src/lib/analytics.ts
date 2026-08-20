@@ -37,4 +37,13 @@ export const Analytics = {
 
   purchaseCancelled: (p: {plan: string}) =>
     posthog.capture('purchase_cancelled', p),
+
+  purchaseFailed: (p: {plan: string; code?: string; message?: string}) =>
+    posthog.capture('purchase_failed', p),
+
+  purchaseRestored: (p: {source: string}) =>
+    posthog.capture('purchase_restored', p),
+
+  entitlementFallbackUsed: (p: {detail: string}) =>
+    posthog.capture('entitlement_fallback_used', p),
 };
