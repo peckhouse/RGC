@@ -46,4 +46,29 @@ export const Analytics = {
 
   entitlementFallbackUsed: (p: {detail: string}) =>
     posthog.capture('entitlement_fallback_used', p),
+
+  adsInitialized: (p: {adapters: string; testUnits: boolean}) =>
+    posthog.capture('ads_initialized', p),
+
+  adsInitFailed: (p: {message: string}) =>
+    posthog.capture('ads_init_failed', p),
+
+  adLoaded: (p: {unitId: string}) => posthog.capture('ad_loaded', p),
+
+  adFailed: (p: {unitId: string; code?: string; message: string}) =>
+    posthog.capture('ad_load_failed', p),
+
+  adsSuppressedForPro: () => posthog.capture('ads_suppressed_pro'),
+
+  consentGathered: (p: {
+    status: string;
+    canRequestAds: boolean;
+    formAvailable: boolean;
+  }) => posthog.capture('ads_consent_gathered', p),
+
+  consentFailed: (p: {message: string}) =>
+    posthog.capture('ads_consent_failed', p),
+
+  consentPrivacyOptionsOpened: () =>
+    posthog.capture('ads_consent_privacy_options_opened'),
 };

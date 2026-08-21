@@ -29,6 +29,7 @@ import {
 import {useProStatus} from '../hooks/useProStatus';
 import {restorePurchases, getSubscriptionDetails} from '../lib/purchases';
 import {Analytics} from '../lib/analytics';
+import {showAdsPrivacyOptions, useAdsState} from '../lib/ads';
 import type {SubscriptionDetails} from '../lib/purchases';
 import {Toast} from '../components/common/AppToast';
 import ScreenLogo from '../components/common/ScreenLogo';
@@ -67,6 +68,7 @@ export default function AccountScreen() {
   const {data: profile, isLoading: profileLoading} = useProfile();
   const {data: referralCount} = useReferralCount();
   const {isPro, refresh: refreshProStatus, setPro} = useProStatus();
+  const {privacyOptionsRequired} = useAdsState();
   const [subDetails, setSubDetails] = useState<SubscriptionDetails | null>(null);
 
   useEffect(() => {
@@ -381,6 +383,31 @@ export default function AccountScreen() {
             </Text>
           )}
         </Pressable>
+        {/* Google requires an ongoing way for EEA users to change or withdraw
+            the ad consent they gave on first launch. Only rendered where UMP
+            says the privacy options form applies. */}
+        {privacyOptionsRequired && (
+          <>
+            <View style={styles.legalDivider} />
+            <Pressable
+              style={styles.legalRow}
+              onPress={() =>
+                showAdsPrivacyOptions().catch(() =>
+                  Toast.show({
+                    type: 'error',
+                    text1: 'Could not open ad privacy settings',
+                    text2: 'Please try again in a moment',
+                  }),
+                )
+              }>
+              {({pressed}) => (
+                <Text style={[styles.legalRowText, pressed && styles.linkUnderline]}>
+                  Ad Privacy Settings
+                </Text>
+              )}
+            </Pressable>
+          </>
+        )}
       </Card>
 
       {/* ── Danger zone ── */}
