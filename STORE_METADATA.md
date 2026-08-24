@@ -188,7 +188,15 @@ Built by collectors, for collectors. Fast, clean, dark UI. No social feeds, no p
 ---
 
 Questions or feedback? Reach out at ludovic.anthony.prandi@gmail.com
+
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Privacy Policy: https://peckhouse.github.io/RGC/privacy.html
 ```
+
+> **Keep the two legal links.** Guideline 3.1.2 requires functional Terms of Use and
+> Privacy Policy links in the App Description for auto-renewable subscriptions.
+> Keep them as bare links — the in-app locations (Paywall screen, Account → Legal)
+> belong in **App Review Notes**, not in the public description.
 
 _(~2,950 chars — fits both stores' 4000-char limit)_
 
