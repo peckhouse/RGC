@@ -99,24 +99,3 @@ export async function deleteAccount(): Promise<void> {
   const {error} = await supabase.rpc('delete_user_account');
   if (error) throw error;
 }
-
-export async function linkReferralCode(userId: string, code: string): Promise<void> {
-  const {error} = await supabase
-    .from('profiles')
-    .update({referred_by: code.toUpperCase()})
-    .eq('id', userId);
-  if (error) {
-    console.warn('Failed to link referral code:', error.message);
-  }
-}
-
-export function useReferralCount() {
-  return useQuery<number>({
-    queryKey: ['referral-count'],
-    queryFn: async () => {
-      const {data, error} = await supabase.rpc('get_referral_count');
-      if (error) throw error;
-      return data as number;
-    },
-  });
-}

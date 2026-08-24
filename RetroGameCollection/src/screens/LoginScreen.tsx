@@ -155,7 +155,6 @@ function SignUpCard({onSwitch}: {onSwitch: () => void}) {
   const {signUp} = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -183,16 +182,9 @@ function SignUpCard({onSwitch}: {onSwitch: () => void}) {
       if (result.error) {
         setError(result.error.message);
       } else {
-        if (referralCode.trim() && result.data?.user) {
-          await supabase
-            .from('profiles')
-            .update({referred_by: referralCode.trim().toUpperCase()})
-            .eq('id', result.data.user.id);
-        }
         setSuccessMsg('Account created! Check your email to confirm your address, then sign in.');
         setEmail('');
         setPassword('');
-        setReferralCode('');
       }
     } finally {
       setLoading(false);
@@ -251,19 +243,6 @@ function SignUpCard({onSwitch}: {onSwitch: () => void}) {
             : <Eye size={18} color="#64748b" />}
         </TouchableOpacity>
       </View>
-
-      <Text style={styles.label}>Referral Code (optional)</Text>
-      <TextInput
-        style={styles.input}
-        value={referralCode}
-        onChangeText={setReferralCode}
-        placeholder="e.g. ABCD12"
-        placeholderTextColor="#64748b"
-        autoCapitalize="characters"
-        autoCorrect={false}
-        maxLength={6}
-        editable={!loading}
-      />
 
       <Animated.View style={{transform: [{scale: buttonScale}]}}>
         <Pressable
@@ -608,17 +587,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginBottom: 6,
     letterSpacing: 0.5,
-  },
-  input: {
-    backgroundColor: '#0f172a',
-    borderWidth: 1,
-    borderColor: '#334155',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#f1f5f9',
-    marginBottom: 16,
   },
   inputWrapper: {
     flexDirection: 'row',

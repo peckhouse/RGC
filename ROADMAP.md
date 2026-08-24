@@ -47,8 +47,8 @@ Detailed status of each phase. See [CLAUDE.md](CLAUDE.md) for project overview, 
 - [x] **RevenueCat IAP** — `react-native-purchases@9.10.5` + `PaywallScreen.tsx` with monthly/annual/lifetime
 - [x] `useProStatus.ts` hook
 - [x] `subscription_tier` + `subscription_expires_at` in `types/database.ts`
-- [x] Free console limit via `useFreeConsoleLimit()` hook — 5 base, **6** when in a referral relationship (`profile.referred_by` set OR `useReferralCount() > 0`); enforced in HomeScreen + GameDetailScreen
-- [x] Referral flow — code linked on sign-up via `linkReferralCode`, `get_referral_count` RPC, AccountScreen "Refer a friend" card with shareable code + Share API
+- [x] Free console limit via `useFreeConsoleLimit()` hook — flat **5**; enforced in HomeScreen + GameDetailScreen. Extra consoles unlock **only** via IAP (App Store guideline 3.1.1)
+- [x] ~~Referral flow~~ — **removed 2026-08-24**: rejected under App Store guideline 3.1.1 (no unlocking functionality outside IAP). Code input, shareable code, `get_referral_count` RPC usage and the +1 console bonus are all gone from the app
 - [x] End-to-end verification — sandbox purchase, AdMob test ads, PostHog dashboard events all confirmed working
 
 ---
@@ -66,7 +66,7 @@ Detailed status of each phase. See [CLAUDE.md](CLAUDE.md) for project overview, 
 - [x] CollectionScreen — console cards matching ConsoleList style (blue-glow border, animated press, console logo + games-owned count)
 - [x] CollectionConsoleScreen — game rows matching GameListScreen design (gradient cards, blue-glow border, animated press, region + condition badges, local search); progress bar uses cumulated EU+NA+JP total
 - [x] WishlistScreen — flattened (no per-console drill-down); single search-able list using GameListScreen row design with region + console + priority badges, sorted by priority then name. WishlistConsoleScreen removed. Pro gate themed (gradient card, electric-pink Star icon, brand-gradient button)
-- [x] AccountScreen — gradient cards w/ blue-glow border, display-font section labels, lucide icons (Pencil/Camera/Check/LogOut), `GradientText` referral code, brand-gradient buttons (Share Invite + Upgrade + Save), themed Cancel button, themed username TextInput
+- [x] AccountScreen — gradient cards w/ blue-glow border, display-font section labels, lucide icons (Pencil/Camera/Check/LogOut), brand-gradient buttons (Upgrade + Save), themed Cancel button, themed username TextInput
 - [x] HomeScreen — "Welcome back" removed, stats cards themed, free-limit driven by hook; "Recently Added" replaced with two `NavCard`s (Library → Collection, Star → Wishlist) in the gradient-card pattern
 - [x] Page headers — all four (Console, Collection, Wishlist, Account) now inline logo + title, left-aligned, `lineHeight: 40` on title for vertical centering with logo
 - [x] Bottom tab bar — positioning + visual polish

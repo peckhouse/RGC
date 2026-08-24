@@ -9,7 +9,6 @@ import {
   Image,
   ActivityIndicator,
   Modal,
-  Share,
   ScrollView,
   Linking,
   StyleSheet,
@@ -23,7 +22,6 @@ import {
   useProfile,
   useUpdateUsername,
   useUploadAvatar,
-  useReferralCount,
   deleteAccount,
 } from '../api/profile';
 import {useProStatus} from '../hooks/useProStatus';
@@ -33,7 +31,6 @@ import {showAdsPrivacyOptions, useAdsState} from '../lib/ads';
 import type {SubscriptionDetails} from '../lib/purchases';
 import {Toast} from '../components/common/AppToast';
 import ScreenLogo from '../components/common/ScreenLogo';
-import GradientText from '../components/common/GradientText';
 import {Fonts} from '../constants/fonts';
 import {PRIVACY_POLICY_URL, TERMS_URL} from '../constants/legal';
 import type {RootStackParamList} from '../navigation/AppNavigator';
@@ -66,7 +63,6 @@ export default function AccountScreen() {
   const {session, signOut} = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {data: profile, isLoading: profileLoading} = useProfile();
-  const {data: referralCount} = useReferralCount();
   const {isPro, refresh: refreshProStatus, setPro} = useProStatus();
   const {privacyOptionsRequired} = useAdsState();
   const [subDetails, setSubDetails] = useState<SubscriptionDetails | null>(null);
@@ -153,13 +149,6 @@ export default function AccountScreen() {
     } catch {
       Toast.show({type: 'error', text1: 'Restore failed', text2: 'Please try again'});
     }
-  }
-
-  async function handleShare() {
-    const code = profile?.referral_code ?? '';
-    await Share.share({
-      message: `Join me on RetroGameCollection! Use my code ${code} when you sign up 🎮`,
-    });
   }
 
   const displayName = profile?.username || email.split('@')[0] || 'Collector';
@@ -268,41 +257,6 @@ export default function AccountScreen() {
               )}
             </Pressable>
           </View>
-        )}
-      </Card>
-
-      {/* ── Refer a friend ── */}
-      <Text style={styles.sectionLabel}>Refer a friend</Text>
-      <Card>
-        {profile?.referral_code ? (
-          <>
-            <Text style={styles.referSubtitle}>
-              You and your friend each get a bonus console (6 instead of 5) when they sign up with your code.
-            </Text>
-            <View style={styles.codeRow}>
-              <Text style={styles.codeLabel}>Your code</Text>
-              <GradientText style={styles.codeValue}>{profile.referral_code}</GradientText>
-            </View>
-            {referralCount != null && referralCount > 0 && (
-              <Text style={styles.referCount}>
-                {referralCount} {referralCount === 1 ? 'friend' : 'friends'} joined with your code
-              </Text>
-            )}
-            <Pressable
-              style={({pressed}) => [styles.shareBtn, pressed && styles.shareBtnPressed]}
-              onPress={handleShare}>
-              <LinearGradient
-                colors={['#FF1B8D', '#A855F7', '#5B45DC']}
-                locations={[0, 0.65, 1]}
-                start={{x: 0.3, y: 0}}
-                end={{x: 0.4, y: 1}}
-                style={styles.shareBtnGradient}
-              />
-              <Text style={styles.shareBtnText}>Share Invite</Text>
-            </Pressable>
-          </>
-        ) : (
-          <Text style={styles.referSubtitle}>Referral code generating…</Text>
         )}
       </Card>
 
@@ -644,40 +598,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  referSubtitle: {
-    fontSize: 13,
-    color: '#94a3b8',
-    marginBottom: 14,
-  },
-  codeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(99, 160, 255, 0.25)',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
-  codeLabel: {
-    fontSize: 13,
-    color: '#94a3b8',
-    fontWeight: '600',
-  },
-  codeValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: 'rgba(99, 160, 255, 0.95)',
-    letterSpacing: 3,
-  },
-  referCount: {
-    fontSize: 13,
-    color: '#94a3b8',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
   shareBtn: {
     borderRadius: 10,
     paddingVertical: 12,

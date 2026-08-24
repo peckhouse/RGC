@@ -181,10 +181,6 @@ Free: track up to 5 consoles, see your collection value, ads supported.
 Pro: unlimited consoles, wishlist, no ads, export.
 Subscriptions: $2.99/month or $24.99/year. One-time Lifetime: $49.99.
 
-REFERRAL BONUS
-
-Share your invite code from your profile. When a friend signs up using it, you both get a bonus console slot — 6 instead of 5 — for free.
-
 WHY RTGC?
 
 Built by collectors, for collectors. Fast, clean, dark UI. No social feeds, no popups asking you to rate the app, no scrolling carousels of stuff you don't want. Just your collection.

@@ -107,8 +107,6 @@ export interface Profile {
   subscription_tier: 'free' | 'pro' | 'lifetime';
   subscription_expires_at: string | null;
   subscription_platform: 'ios' | 'android' | null;
-  referral_code: string | null;
-  referred_by: string | null;
   created_at: string;
 }
 
