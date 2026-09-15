@@ -181,10 +181,15 @@ function SignUpCard({onSwitch}: {onSwitch: () => void}) {
       const result = await signUp(email.trim(), password);
       if (result.error) {
         setError(result.error.message);
-      } else {
-        setSuccessMsg('Account created! Check your email to confirm your address, then sign in.');
-        setEmail('');
-        setPassword('');
+        return;
+      }
+      setEmail('');
+      setPassword('');
+      // Signup normally returns a session and the auth listener swaps the
+      // navigator to the main stack. Falling through without one would leave
+      // the form blank and silent, so point the user at the sign-in tab.
+      if (!result.data.session) {
+        setSuccessMsg('Account created. Please sign in to continue.');
       }
     } finally {
       setLoading(false);
