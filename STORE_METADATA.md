@@ -10,14 +10,14 @@ URLs assume GitHub Pages is enabled at `peckhouse/RGC` → `/docs` folder. Swap 
 
 ### Localization → English (U.S.)
 
-**Name** _(30 char max — used 21)_
+**Name** _(30 char max — used 29)_
 ```
-Retro Game Collection
+Retro Game Collection Tracker
 ```
 
-**Subtitle** _(30 char max — used 23)_
+**Subtitle** _(30 char max — used 28)_
 ```
-The collector's toolkit
+Cart checklist & price guide
 ```
 
 **Promotional Text** _(170 char max — editable without re-review)_
@@ -25,16 +25,18 @@ The collector's toolkit
 Track every cart and disc in your retro collection. See completion %, market value, and what's missing from each console — from NES to Xbox One.
 ```
 
-**Keywords** _(100 char limit, comma-separated, no spaces, no words from name/subtitle)_
+**Keywords** _(100 char limit — used 98, comma-separated, no spaces, no words from name/subtitle)_
 ```
-nintendo,sega,playstation,xbox,atari,snes,n64,ps1,gba,dreamcast,neogeo,collector,vintage
+collector,catalog,backlog,inventory,database,wishlist,completion,snes,n64,ps1,gba,gamecube,vintage
 ```
 
 **Description** _(4000 char max — see "Full description" below)_
 
 ### General App Information
 
-**Category** — Primary: **Lifestyle** · Secondary: **Reference**
+**Category** — Primary: **Reference** · Secondary: **Entertainment**
+_Lifestyle was the original pick; no competitor uses it. GAMEYE and Retro Game
+Collector both sit in Reference._
 
 **Copyright**
 ```
@@ -52,7 +54,13 @@ https://peckhouse.github.io/RGC/privacy.html
 https://peckhouse.github.io/RGC/
 ```
 
-**Marketing URL** _(optional — leave blank or reuse Support URL)_
+**Marketing URL** _(required — AdMob reads this to locate app-ads.txt)_
+```
+https://peckhouse.github.io/RGC/
+```
+_Google resolves this to the hostname `peckhouse.github.io` and fetches
+`/app-ads.txt` from the domain root, served by the `peckhouse/peckhouse.github.io`
+repo. Leaving this blank blocks AdMob verification and stops ads serving._
 
 ### App Privacy questionnaire answers
 
@@ -94,9 +102,9 @@ Thanks for reviewing!
 
 ### Main store listing → English (United States)
 
-**App name** _(50 char max — used 21)_
+**App name** _(50 char max — used 29)_
 ```
-Retro Game Collection
+Retro Game Collection Tracker
 ```
 
 **Short description** _(80 char max — used 62)_
@@ -108,7 +116,7 @@ Catalog your physical retro game collection across 34 consoles.
 
 ### App content / Store settings
 
-**App category** — Lifestyle
+**App category** — Entertainment _(Play has no Reference category)_
 **Tags** — Hobbies & Interests, Collections
 
 **Contact details**
@@ -222,3 +230,39 @@ _(~2,950 chars — fits both stores' 4000-char limit)_
 - [ ] Phone screenshots uploaded (min 2)
 - [ ] Feature graphic uploaded (1024 × 500)
 - [ ] Signed AAB uploaded via Internal Testing track first
+
+---
+
+## 1.0.3 — what to change in App Store Connect
+
+Create the version first: **Apps → Retro Game Collection → `+` next to iOS App → 1.0.3**.
+Version metadata is locked while a version is *Ready for Sale*, so these fields only
+become editable once 1.0.3 exists in *Prepare for Submission*.
+
+### On the App Information page — left sidebar → General → App Information
+Name and Subtitle live here, **not** on the version page. Both stay greyed out
+until a version exists in *Prepare for Submission*, so create 1.0.3 first.
+- [ ] **Name** → `Retro Game Collection Tracker`
+- [ ] **Subtitle** → `Cart checklist & price guide`
+- [ ] **Category** → Primary **Reference**, Secondary **Entertainment**
+      _(the one field here that is never version-locked)_
+
+### On the 1.0.3 version page
+- [ ] **Keywords** → the 98-char list above
+- [ ] **Marketing URL** → `https://peckhouse.github.io/RGC/` — unblocks AdMob
+- [ ] **What's New in This Version** — required, cannot be left empty:
+```
+Creating an account is now instant — no email confirmation step.
+
+Improved ad privacy controls on iOS.
+
+Stability and performance fixes.
+```
+- [ ] **Build** → attach build 29 (`MARKETING_VERSION` 1.0.3 / `CURRENT_PROJECT_VERSION` 29)
+
+### Editable any time, independent of the release
+- [ ] **Promotional Text** — changeable without review whenever you want
+
+### Unchanged
+Description, screenshots, Privacy Policy URL, Support URL, App Privacy answers,
+copyright, review notes. Nothing below this line needs touching for 1.0.3.
