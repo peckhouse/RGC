@@ -18,7 +18,6 @@ import {usePullRefresh} from '../hooks/usePullRefresh';
 import {ConsoleListSkeleton} from '../components/common/Skeleton';
 import type {CollectionStackParamList} from '../navigation/AppNavigator';
 import type {CollectionEntryWithDetails} from '../api/collection';
-import AdBanner from '../components/common/AdBanner';
 import ScreenLogo from '../components/common/ScreenLogo';
 import {CONSOLE_LOGO_MAP} from './ManufacturerScreen';
 import {Fonts} from '../constants/fonts';
@@ -174,7 +173,6 @@ export default function CollectionScreen() {
           />
         )}
       />
-      <AdBanner />
     </View>
   );
 }

@@ -2,7 +2,8 @@ import React, {useEffect, useRef} from 'react';
 import {View, Image, StyleSheet, Animated, Pressable} from 'react-native';
 import {NavigationContainer, StackActions, useNavigationContainerRef} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {BottomTabBar, createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {Home, Gamepad2, Library, Star, User, ChevronLeft} from 'lucide-react-native';
 import {useNavigation} from '@react-navigation/native';
 
@@ -12,6 +13,7 @@ import {Analytics} from '../lib/analytics';
 import {configurePurchases, logOutPurchases} from '../lib/purchases';
 import {useProfile} from '../api/profile';
 import type {ManufacturerKey} from '../constants/manufacturers';
+import AdBanner from '../components/common/AdBanner';
 
 // Screens
 import HomeScreen from '../screens/HomeScreen';
@@ -222,9 +224,19 @@ function AuthNavigator() {
   );
 }
 
+function TabBarWithAd(props: BottomTabBarProps) {
+  return (
+    <>
+      <AdBanner />
+      <BottomTabBar {...props} />
+    </>
+  );
+}
+
 function MainTabs() {
   return (
     <Tab.Navigator
+      tabBar={TabBarWithAd}
       screenOptions={{
         tabBarActiveTintColor: '#6366f1',
         tabBarInactiveTintColor: '#9ca3af',

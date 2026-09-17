@@ -23,7 +23,6 @@ import {CONSOLE_LOGO_MAP} from './ManufacturerScreen';
 import {ScreenHeader} from '../navigation/AppNavigator';
 import type {ConsolesStackParamList} from '../navigation/AppNavigator';
 import type {Game} from '../types/database';
-import AdBanner from '../components/common/AdBanner';
 import {Fonts} from '../constants/fonts';
 
 type Props = NativeStackScreenProps<ConsolesStackParamList, 'GameList'>;
@@ -308,7 +307,6 @@ export default function GameListScreen({route}: Props) {
           initialNumToRender={20}
         />
       )}
-      <AdBanner />
     </View>
   );
 }

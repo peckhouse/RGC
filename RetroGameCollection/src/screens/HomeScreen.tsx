@@ -20,7 +20,6 @@ import {useProStatus} from '../hooks/useProStatus';
 import {useFreeConsoleLimit} from '../hooks/useFreeConsoleLimit';
 import {Gamepad2, Joystick, ChevronRight, Library, Star} from 'lucide-react-native';
 import type {RootStackParamList, MainTabParamList, HomeStackParamList} from '../navigation/AppNavigator';
-import AdBanner from '../components/common/AdBanner';
 import {StatsCardSkeleton} from '../components/common/Skeleton';
 import GradientText from '../components/common/GradientText';
 import {Fonts} from '../constants/fonts';
@@ -253,7 +252,6 @@ export default function HomeScreen() {
 
 
       </ScrollView>
-      <AdBanner />
     </View>
   );
 }

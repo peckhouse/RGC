@@ -233,11 +233,11 @@ _(~2,950 chars — fits both stores' 4000-char limit)_
 
 ---
 
-## 1.0.3 — what to change in App Store Connect
+## 1.0.3 — shipped (approved, released)
 
-Create the version first: **Apps → Retro Game Collection → `+` next to iOS App → 1.0.3**.
-Version metadata is locked while a version is *Ready for Sale*, so these fields only
-become editable once 1.0.3 exists in *Prepare for Submission*.
+Kept as a record of what was applied. Version metadata is locked while a version is
+*Ready for Sale*, so these fields were only editable while 1.0.3 sat in
+*Prepare for Submission*.
 
 ### On the App Information page — left sidebar → General → App Information
 Name and Subtitle live here, **not** on the version page. Both stay greyed out
@@ -266,3 +266,53 @@ Stability and performance fixes.
 ### Unchanged
 Description, screenshots, Privacy Policy URL, Support URL, App Privacy answers,
 copyright, review notes. Nothing below this line needs touching for 1.0.3.
+
+---
+
+## 1.0.4 — carrying the in-app purchases
+
+1.0.3 is approved and live, so the products can't be attached to it any more: a
+version accepts a review submission once, and a build number is consumed once. The
+subscriptions need a new version and a new binary to ride on.
+
+Already bumped in the repo: `MARKETING_VERSION` 1.0.4, `CURRENT_PROJECT_VERSION` 30.
+Android is deliberately untouched (versionCode 5 / 1.0.2) — this blocker is Apple-only.
+
+### On the 1.0.4 version page
+Create it with **Apps → Retro Game Collection → `+` next to iOS App → 1.0.4**.
+- [ ] **What's New in This Version** — required, cannot be left empty:
+```
+RGC Pro is now available — unlock unlimited consoles, the wishlist, and an ad-free app.
+```
+- [ ] **Build** → upload build 30 and attach it
+- [ ] Name, subtitle, keywords, category and marketing URL all carry over from
+      1.0.3 — nothing to re-enter
+
+### In-App Purchases — first submission
+
+The three products have never been approved, which is why the shipped app shows
+"Plans unavailable": StoreKit returns no products, so the paywall renders its
+empty state. App Store Connect refuses a standalone submission with *"Your first
+auto-renewable subscription must be submitted with a new app version"* and *"must
+be submitted with its subscription group"* — both mean the subscriptions cannot go
+up on their own. They ride along with the 1.0.4 version, and the whole group goes
+at once.
+
+- [ ] **Subscription group** — Monetization → Subscriptions. Monthly and Annual
+      must sit in one group, and the group itself needs a localized **display
+      name**, or every member stays in *Missing Metadata*.
+- [ ] **Each subscription** (`com.retrogamecollection.app.monthly`, `.annual`) —
+      localized display name + description, price, availability, and a **review
+      screenshot** (640 × 920 minimum). Both must read *Ready to Submit*; one stuck
+      in *Missing Metadata* blocks the other, since the group submits as a unit.
+- [ ] **Lifetime** (`com.retrogamecollection.app.lifetime`) is a non-consumable, so
+      it sits outside the group — attach it to the same version submission anyway.
+- [ ] **Attach to the version** — on the 1.0.4 page, *In-App Purchases and
+      Subscriptions* → select all three → Add for Review. They are then reviewed
+      alongside build 30.
+- [ ] **Business → Agreements** — the Paid Applications Agreement must be active.
+      If it lapsed, products return nothing even after approval.
+
+For the review screenshot, run the app in the simulator (`npm run ios`) and capture
+the paywall: the Run scheme points at `ios/StoreKitConfig.storekit`, so prices
+render locally even while the real products are unapproved.

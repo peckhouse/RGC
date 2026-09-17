@@ -24,7 +24,6 @@ import type {UserWishlist} from '../types/database';
 import {useProStatus} from '../hooks/useProStatus';
 import {usePullRefresh} from '../hooks/usePullRefresh';
 import ScreenLogo from '../components/common/ScreenLogo';
-import AdBanner from '../components/common/AdBanner';
 import {Fonts} from '../constants/fonts';
 
 type Nav = NativeStackNavigationProp<WishlistStackParamList & RootStackParamList>;
@@ -286,7 +285,6 @@ export default function WishlistScreen() {
         windowSize={8}
         initialNumToRender={20}
       />
-      <AdBanner />
     </View>
   );
 }
