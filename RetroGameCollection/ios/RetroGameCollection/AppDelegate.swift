@@ -5,6 +5,9 @@ import ReactAppDependencyProvider
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
+  // Some native modules (e.g. the Google Mobile Ads banner) resolve their root
+  // view controller through the app delegate's window, so it must keep
+  // existing under the scene lifecycle. SceneDelegate assigns it.
   var window: UIWindow?
 
   var reactNativeDelegate: ReactNativeDelegate?
@@ -21,19 +24,41 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     reactNativeDelegate = delegate
     reactNativeFactory = factory
 
-    window = UIWindow(frame: UIScreen.main.bounds)
-    window?.backgroundColor = UIColor(red: 10.0/255, green: 10.0/255, blue: 15.0/255, alpha: 1.0)
+    return true
+  }
+}
+
+// iPadOS 27 terminates apps that launch through the legacy UIApplication
+// lifecycle, so the window is created here from the connecting scene rather
+// than in didFinishLaunchingWithOptions. Referenced from the
+// UIApplicationSceneManifest entry in Info.plist.
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+  var window: UIWindow?
+
+  func scene(
+    _ scene: UIScene,
+    willConnectTo session: UISceneSession,
+    options connectionOptions: UIScene.ConnectionOptions
+  ) {
+    guard let windowScene = scene as? UIWindowScene else { return }
+    guard let appDelegate = UIApplication.shared.delegate as? AppDelegate,
+          let factory = appDelegate.reactNativeFactory else { return }
+
+    // Prevent white flash before JS renders
+    let background = UIColor(red: 10.0 / 255, green: 10.0 / 255, blue: 15.0 / 255, alpha: 1.0)
+
+    let window = UIWindow(windowScene: windowScene)
+    window.backgroundColor = background
 
     factory.startReactNative(
       withModuleName: "RetroGameCollection",
       in: window,
-      launchOptions: launchOptions
+      launchOptions: nil
     )
 
-    // Prevent white flash before JS renders
-    window?.rootViewController?.view.backgroundColor = UIColor(red: 10.0/255, green: 10.0/255, blue: 15.0/255, alpha: 1.0)
-
-    return true
+    window.rootViewController?.view.backgroundColor = background
+    self.window = window
+    appDelegate.window = window
   }
 }
 

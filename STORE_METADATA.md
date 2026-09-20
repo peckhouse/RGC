@@ -310,6 +310,13 @@ at once.
 - [ ] **Attach to the version** — on the 1.0.4 page, *In-App Purchases and
       Subscriptions* → select all three → Add for Review. They are then reviewed
       alongside build 30.
+- [ ] **One submission, five items** — App Store Connect allows a single review
+      submission in progress, and everything goes in it: version 1.0.4 + build 30,
+      the subscription group (its pending display name is its own reviewable item),
+      Monthly, Annual, Lifetime. The group is not an alternative to its members —
+      submitting it alone fails with the same error. Items split across two draft
+      submissions is what blocks the submit button; consolidate into the draft that
+      holds the version and delete the other.
 - [ ] **Business → Agreements** — the Paid Applications Agreement must be active.
       If it lapsed, products return nothing even after approval.
 
